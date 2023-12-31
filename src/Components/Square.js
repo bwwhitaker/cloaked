@@ -62,31 +62,31 @@ function Square(props) {
 		//console.log(a);
 		if (isInArray(id, shipLocations) && isTPressed === false && isUPressed === false) {
 			setCurrentBackgroundColor('red');
-			console.log('boom');
+			//console.log('boom');
 			setTimeout(() => {
-				alert(`You're scans alerted the enemy and they fired on you first. You lose!`);
+				alert(`Your scans alerted the enemy and they fired on you first. You lose!`);
 			}, 200);
 		} else if (isTPressed === true) {
 			setCurrentBackgroundColor('green');
 			props.updateTargeted(id);
 		} else if (isUPressed === true && isInArray(id, targeted)) {
 			setCurrentBackgroundColor('white');
-			console.log('removing target from list');
+			//console.log('removing target from list');
 			props.removeTargeted(id);
 		} else if (isUPressed === true) {
 			setCurrentBackgroundColor('white');
-			console.log('clearing target');
+			//console.log('clearing target');
 		} else if (isInArray(a, shipLocations) && id % axis !== 1) {
-			console.log('close a');
+			//console.log('close a');
 			setCurrentBackgroundColor('blue');
 		} else if (isInArray(b, shipLocations) && id % axis !== 0) {
-			console.log('close b');
+			//console.log('close b');
 			setCurrentBackgroundColor('blue');
 		} else if (isInArray(c, shipLocations)) {
-			console.log('close');
+			//console.log('close');
 			setCurrentBackgroundColor('blue');
 		} else if (isInArray(d, shipLocations)) {
-			console.log('close');
+			//console.log('close');
 			setCurrentBackgroundColor('blue');
 		} else {
 			setCurrentBackgroundColor('black');

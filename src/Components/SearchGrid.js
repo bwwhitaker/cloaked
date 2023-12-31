@@ -15,7 +15,7 @@ function SearchGrid(props) {
 		setTargeted((prevTargeted) => [...prevTargeted, id]);
 	};
 
-	console.log(targeted);
+	//console.log(targeted);
 
 	const removeTargeted = (id) => {
 		if (targeted.includes(id)) {

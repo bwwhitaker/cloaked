@@ -11,7 +11,7 @@ function GameSpace() {
 			const randomNumber = Math.floor(Math.random() * maxValue) + 1;
 			randomNumbers.add(randomNumber);
 		}
-		console.log(randomNumbers);
+		//console.log(randomNumbers);
 		return Array.from(randomNumbers);
 	};
 
