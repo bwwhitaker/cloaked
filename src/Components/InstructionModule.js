@@ -35,13 +35,13 @@ function InstructionModule(props) {
 
 					<ListItem>
 						<Typography variant='body2'>
-							If cell is Red, they're detected your scan and have fired. Game over.{' '}
+							If cell is Red, they have detected your scan and have fired. Game over.
 						</Typography>
 					</ListItem>
 
 					<ListItem>
 						<Typography variant='body2'>
-							If you think you know a ship's location, you need to Lock Target. Press and hold T when you click the
+							If you think you know a ship's location, you need to Lock Target. Press and hold "T" when you click the
 							square. Targetted squares are Green. Targetting doesn't mean a ship is located in the targeted cell.
 						</Typography>
 					</ListItem>
@@ -59,7 +59,7 @@ function InstructionModule(props) {
 					</ListItem>
 					<ListItem>
 						<Typography variant='body2'>
-							To unlock Targetting on a square, press and hold U when you click on the square.
+							To unlock Targetting on a square, press and hold "U" when you click on the square.
 						</Typography>
 					</ListItem>
 				</List>
