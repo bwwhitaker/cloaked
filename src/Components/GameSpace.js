@@ -111,6 +111,7 @@ function GameSpace() {
 						variant='contained'
 						onClick={() => {
 							setReadyToPlay(!readyToPlay);
+							setShipLocations([]);
 							handleGenerateClick();
 						}}
 					>
@@ -139,7 +140,14 @@ function GameSpace() {
 					>
 						Show Instructions
 					</Button>
-					<SearchGrid axis={axis} ships={ships} fieldBg={fieldBg} shipLocations={shipLocations} />
+					<SearchGrid
+						axis={axis}
+						ships={ships}
+						fieldBg={fieldBg}
+						shipLocations={shipLocations}
+						setReadyToPlay={setReadyToPlay}
+						setShipLocations={setShipLocations}
+					/>
 				</div>
 			)}
 

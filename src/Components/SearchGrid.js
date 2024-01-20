@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Square from './Square';
 import { Grid, Button } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { Dialog, DialogContent, DialogContentText, DialogTitle, DialogActions } from '@mui/material';
 
 function SearchGrid(props) {
 	const axisX = parseInt(props.axis);
@@ -18,6 +19,20 @@ function SearchGrid(props) {
 	const updateTargeted = (id) => {
 		setTargeted((prevTargeted) => [...prevTargeted, id]);
 	};
+	const [fireDialogueOpen, setFireDialogueOpen] = useState(false);
+	const handleClose = (value) => {
+		setFireDialogueOpen(!fireDialogueOpen);
+		props.setReadyToPlay(false);
+		props.setShipLocations([]);
+	};
+
+	const handleScanCloakedShip = (value) => {
+		props.setReadyToPlay(false);
+		props.setShipLocations([]);
+	};
+	const [dialogueTitle, setDialogueTitle] = useState('');
+
+	const [dialogueMessage, setDialogueMessage] = useState('');
 
 	const [clickMode, setClickMode] = useState('Scan');
 
@@ -43,15 +58,19 @@ function SearchGrid(props) {
 		message = `There are ${ships} cloaked ships!`;
 	}
 
-	// console.log(shipsToPass);
+	console.log(shipsToPass);
 	// console.log(targeted);
 
 	function Fire() {
 		if (JSON.stringify(shipsToPass.sort()) === JSON.stringify(targeted.sort())) {
-			alert('You found all of the ships and destroyed them. You win!');
+			setFireDialogueOpen(true);
+			setDialogueMessage('You found all of the ships and destroyed them. You win!');
+			setDialogueTitle('Congrats!');
 		} else {
-			alert(
-				`Your scans were not accurate. Ships were in cells: ${shipsToPass} They fired back and destroyed your ship. You lose!`
+			setFireDialogueOpen(true);
+			setDialogueTitle('Game Over!');
+			setDialogueMessage(
+				`Your scans were not accurate. Ships were in cells: ${shipsToPass.sort()} They fired back and destroyed your ship. You lose!`
 			);
 		}
 	}
@@ -136,6 +155,7 @@ function SearchGrid(props) {
 								targeted={targeted}
 								removeTargeted={removeTargeted}
 								clickMode={clickMode}
+								handleScanCloakedShip={handleScanCloakedShip}
 							/>
 						</Grid>
 					))}
@@ -151,6 +171,22 @@ function SearchGrid(props) {
 			>
 				Fire!
 			</Button>
+			<Dialog
+				open={fireDialogueOpen}
+				onClose={handleClose}
+				aria-labelledby='alert-dialog-title'
+				aria-describedby='alert-dialog-description'
+			>
+				<DialogTitle id='alert-dialog-title'>{dialogueTitle}</DialogTitle>
+				<DialogContent>
+					<DialogContentText id='alert-dialog-description'>{dialogueMessage}</DialogContentText>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={handleClose} autoFocus>
+						Reset Game
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</div>
 	);
 }

@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 import { Paper, Button } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { Dialog, DialogContent, DialogContentText, DialogTitle, DialogActions } from '@mui/material';
 
 function Square(props) {
 	const [currentBackgroundColor, setCurrentBackgroundColor] = useState(props.bg);
 	const shipLocations = props.shipLocations;
 	const axis = props.axis;
 	const targeted = props.targeted;
+	const [scanDialogueOpen, setScanDialogueOpen] = useState(false);
+	const handleClose = (value) => {
+		setScanDialogueOpen(!scanDialogueOpen);
+		props.handleScanCloakedShip();
+	};
 
 	const isInArray = (value, array) => {
 		return array.includes(value);
@@ -23,12 +29,12 @@ function Square(props) {
 			setCurrentBackgroundColor('red');
 			props.removeTargeted(id);
 			setTimeout(() => {
-				alert(`Your scans alerted the enemy and they fired on you first. You lose!`);
+				setScanDialogueOpen(true);
 			}, 200);
 		} else if (isInArray(id, shipLocations) && clickMode === 'Scan') {
 			setCurrentBackgroundColor('red');
 			setTimeout(() => {
-				alert(`Your scans alerted the enemy and they fired on you first. You lose!`);
+				setScanDialogueOpen(true);
 			}, 200);
 		} else if (clickMode === 'Target') {
 			setCurrentBackgroundColor('green');
@@ -85,6 +91,22 @@ function Square(props) {
 					{props.title}
 				</ButtonPlace>
 			</PaperPlace>
+			<Dialog
+				open={scanDialogueOpen}
+				onClose={handleClose}
+				aria-labelledby='alert-dialog-title'
+				aria-describedby='alert-dialog-description'
+			>
+				<DialogTitle id='alert-dialog-title'>{'Game Over!'}</DialogTitle>
+				<DialogContent>
+					<DialogContentText id='alert-dialog-description'>{`Your scans alerted the enemy and they fired on you first. You lose!`}</DialogContentText>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={handleClose} autoFocus>
+						Reset Game
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</div>
 	);
 }
