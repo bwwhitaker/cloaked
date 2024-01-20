@@ -43,7 +43,8 @@ function SearchGrid(props) {
 		message = `There are ${ships} cloaked ships!`;
 	}
 
-	//console.log(shipsToPass);
+	// console.log(shipsToPass);
+	// console.log(targeted);
 
 	function Fire() {
 		if (JSON.stringify(shipsToPass.sort()) === JSON.stringify(targeted.sort())) {

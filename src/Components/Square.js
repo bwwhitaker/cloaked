@@ -19,7 +19,13 @@ function Square(props) {
 		let c = id - axis;
 		let d = id + axis;
 
-		if (isInArray(id, shipLocations) && clickMode === 'Scan') {
+		if (isInArray(id, shipLocations) && clickMode === 'Scan' && isInArray(id, targeted)) {
+			setCurrentBackgroundColor('red');
+			props.removeTargeted(id);
+			setTimeout(() => {
+				alert(`Your scans alerted the enemy and they fired on you first. You lose!`);
+			}, 200);
+		} else if (isInArray(id, shipLocations) && clickMode === 'Scan') {
 			setCurrentBackgroundColor('red');
 			setTimeout(() => {
 				alert(`Your scans alerted the enemy and they fired on you first. You lose!`);
@@ -29,6 +35,9 @@ function Square(props) {
 			props.updateTargeted(id);
 		} else if (clickMode === 'Unlock' && isInArray(id, targeted)) {
 			setCurrentBackgroundColor('white');
+			props.removeTargeted(id);
+		} else if (clickMode === 'Scan' && isInArray(id, targeted)) {
+			setCurrentBackgroundColor('black');
 			props.removeTargeted(id);
 		} else if (clickMode === 'Unlock') {
 			setCurrentBackgroundColor('white');

@@ -29,16 +29,20 @@ function GameSpace() {
 			label: '4 x 4',
 		},
 		{
+			value: 5,
+			label: '5 x 5',
+		},
+		{
 			value: 6,
 			label: '6 x 6',
 		},
 		{
-			value: 8,
-			label: '8 x 8',
+			value: 7,
+			label: '7 x 7',
 		},
 		{
-			value: 10,
-			label: '10 x 10',
+			value: 8,
+			label: '8 x 8',
 		},
 	];
 
@@ -86,10 +90,10 @@ function GameSpace() {
 						defaultValue={6}
 						aria-label='Grid Axis'
 						valueLabelDisplay='auto'
-						step={2}
+						step={1}
 						marks={axisMarks}
 						min={4}
-						max={10}
+						max={8}
 						onChangeCommitted={changeAxis}
 					/>
 					How Many Ships to Find?
@@ -125,7 +129,7 @@ function GameSpace() {
 							setShipLocations([]);
 						}}
 					>
-						Abandon Search
+						Modify Grid
 					</Button>
 					<Button
 						onClick={() => {
