@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Square from './Square';
 import { Grid, Button } from '@mui/material';
+import { styled } from '@mui/material/styles';
 
 function SearchGrid(props) {
 	const axisX = parseInt(props.axis);
@@ -9,13 +10,18 @@ function SearchGrid(props) {
 	const ships = parseInt(props.ships);
 	const bg = props.fieldBg;
 	const shipsToPass = props.shipLocations;
-	let [targeted, setTargeted] = useState([]);
-
+	const [targeted, setTargeted] = useState([]);
+	const [scanBackground, setScanBackground] = useState('Blue');
+	const [targetBackground, setTargetBackground] = useState('');
+	const [unlockBackground, setUnlockBackground] = useState('');
+	const [unlockFontColor, setUnlockFontColor] = useState('White');
 	const updateTargeted = (id) => {
 		setTargeted((prevTargeted) => [...prevTargeted, id]);
 	};
 
-	//console.log(targeted);
+	const [clickMode, setClickMode] = useState('Scan');
+
+	console.log(clickMode);
 
 	const removeTargeted = (id) => {
 		if (targeted.includes(id)) {
@@ -49,10 +55,73 @@ function SearchGrid(props) {
 		}
 	}
 
+	const ScanButton = styled(Button)(() => ({
+		textAlign: 'center',
+		backgroundColor: scanBackground,
+		color: 'White',
+		justifyContent: 'center',
+		marginLeft: '10px',
+	}));
+
+	const TargetButton = styled(Button)(() => ({
+		textAlign: 'center',
+		backgroundColor: targetBackground,
+		color: 'White',
+		justifyContent: 'center',
+		marginLeft: '10px',
+	}));
+
+	const UnlockButton = styled(Button)(() => ({
+		textAlign: 'center',
+		backgroundColor: unlockBackground,
+		color: unlockFontColor,
+		justifyContent: 'center',
+		marginLeft: '10px',
+	}));
+
 	return (
 		<div>
 			<div>
 				{message}
+				<div>
+					Mode:
+					<ScanButton
+						variant='outlined'
+						onClick={() => {
+							setClickMode('Scan');
+							setUnlockBackground('');
+							setTargetBackground('');
+							setScanBackground('Blue');
+							setUnlockFontColor('White');
+						}}
+					>
+						Scan
+					</ScanButton>
+					<TargetButton
+						variant='outlined'
+						onClick={() => {
+							setClickMode('Target');
+							setUnlockBackground('');
+							setTargetBackground('Green');
+							setScanBackground('');
+							setUnlockFontColor('White');
+						}}
+					>
+						Target
+					</TargetButton>
+					<UnlockButton
+						variant='outlined'
+						onClick={() => {
+							setClickMode('Unlock');
+							setUnlockBackground('White');
+							setTargetBackground('');
+							setScanBackground('');
+							setUnlockFontColor('Black');
+						}}
+					>
+						Unlock
+					</UnlockButton>
+				</div>
 				<Grid width={width} container justifyContent={'center'} spacing={0} columns={gridSize}>
 					{myGridkeys.map((key) => (
 						<Grid item xs={axisX}>
@@ -65,6 +134,7 @@ function SearchGrid(props) {
 								updateTargeted={updateTargeted}
 								targeted={targeted}
 								removeTargeted={removeTargeted}
+								clickMode={clickMode}
 							/>
 						</Grid>
 					))}
