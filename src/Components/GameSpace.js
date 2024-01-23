@@ -141,7 +141,7 @@ function GameSpace() {
 							variant='text'
 							onClick={() => {
 								setOpenInstructions(true);
-								console.log('opening');
+								//console.log('opening');
 							}}
 						>
 							Show Instructions

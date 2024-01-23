@@ -37,13 +37,13 @@ function SearchGrid(props) {
 
 	const [clickMode, setClickMode] = useState('Scan');
 
-	console.log(clickMode);
+	// console.log(clickMode);
 
 	const removeTargeted = (id) => {
 		if (targeted.includes(id)) {
 			setTargeted((prevTargeted) => prevTargeted.filter((value) => value !== id));
 		} else {
-			console.log('cannot complete action');
+			//console.log('cannot complete action');
 		}
 	};
 
@@ -59,7 +59,7 @@ function SearchGrid(props) {
 		message = `There are ${ships} cloaked ships!`;
 	}
 
-	console.log(shipsToPass);
+	//console.log(shipsToPass);
 	// console.log(targeted);
 
 	function Fire() {
@@ -169,7 +169,7 @@ function SearchGrid(props) {
 					variant='contained'
 					color='error'
 					onClick={() => {
-						console.log('fire');
+						//console.log('fire');
 						Fire();
 					}}
 				>
