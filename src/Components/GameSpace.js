@@ -3,6 +3,7 @@ import Slider from '@mui/material/Slider';
 import { Grid, Button } from '@mui/material';
 import SearchGrid from './SearchGrid';
 import InstructionModule from './InstructionModule';
+import './GameSpace.css';
 
 function GameSpace() {
 	const generateUniqueRandomNumbers = (count, maxValue, existingArray) => {
@@ -11,7 +12,6 @@ function GameSpace() {
 			const randomNumber = Math.floor(Math.random() * maxValue) + 1;
 			randomNumbers.add(randomNumber);
 		}
-		//console.log(randomNumbers);
 		return Array.from(randomNumbers);
 	};
 
@@ -84,11 +84,13 @@ function GameSpace() {
 	return (
 		<div>
 			<div hidden={readyToPlay}>
+				<h1>Welcome to Cloaked!</h1>
+				<p>Prepare to hunt for cloaked enemy ships.</p>
 				<Grid container>
-					How large of a map do you want?
+					Grid Size:
 					<Slider
 						defaultValue={6}
-						aria-label='Grid Axis'
+						aria-label='Grid Size'
 						valueLabelDisplay='auto'
 						step={1}
 						marks={axisMarks}
@@ -96,10 +98,10 @@ function GameSpace() {
 						max={8}
 						onChangeCommitted={changeAxis}
 					/>
-					How Many Ships to Find?
+					Cloaked Ships:
 					<Slider
 						defaultValue={2}
-						aria-label='Ship Number'
+						aria-label='Cloaked Ships Count'
 						valueLabelDisplay='auto'
 						step={1}
 						marks={shipMarks}
@@ -107,39 +109,45 @@ function GameSpace() {
 						max={5}
 						onChangeCommitted={changeShips}
 					/>
+				</Grid>
+				<div className='CenterAligning'>
 					<Button
-						variant='contained'
+						variant='outlined'
 						onClick={() => {
 							setReadyToPlay(!readyToPlay);
 							setShipLocations([]);
 							handleGenerateClick();
 						}}
 					>
-						Generate Grid
+						Begin Search
 					</Button>
-				</Grid>
+				</div>
 			</div>
 
 			{readyToPlay && (
 				<div>
-					<Button
-						variant='outlined'
-						onClick={() => {
-							setReadyToPlay(!readyToPlay);
-							setFieldBg('white');
-							setShipLocations([]);
-						}}
-					>
-						Modify Grid
-					</Button>
-					<Button
-						onClick={() => {
-							setOpenInstructions(true);
-							console.log('opening');
-						}}
-					>
-						Show Instructions
-					</Button>
+					<div className='HeaderRow'>
+						<Button
+							variant='outlined'
+							onClick={() => {
+								setReadyToPlay(!readyToPlay);
+								setFieldBg('white');
+								setShipLocations([]);
+							}}
+						>
+							Reset Game
+						</Button>
+						<Button
+							variant='text'
+							onClick={() => {
+								setOpenInstructions(true);
+								console.log('opening');
+							}}
+						>
+							Show Instructions
+						</Button>
+					</div>
+
 					<SearchGrid
 						axis={axis}
 						ships={ships}

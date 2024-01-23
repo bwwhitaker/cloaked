@@ -3,6 +3,7 @@ import Square from './Square';
 import { Grid, Button } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { Dialog, DialogContent, DialogContentText, DialogTitle, DialogActions } from '@mui/material';
+import './GameSpace.css';
 
 function SearchGrid(props) {
 	const axisX = parseInt(props.axis);
@@ -101,9 +102,9 @@ function SearchGrid(props) {
 
 	return (
 		<div>
-			<div>
-				{message}
-				<div>
+			<div className='CenterAligning'>
+				<div className='GameSpaceVertical'>{message}</div>
+				<div className='GameSpaceVertical'>
 					Mode:
 					<ScanButton
 						variant='outlined'
@@ -142,35 +143,39 @@ function SearchGrid(props) {
 						Unlock
 					</UnlockButton>
 				</div>
-				<Grid width={width} container justifyContent={'center'} spacing={0} columns={gridSize}>
-					{myGridkeys.map((key) => (
-						<Grid item xs={axisX}>
-							<Square
-								key={key}
-								title={key}
-								bg={bg}
-								shipLocations={shipsToPass}
-								axis={axisX}
-								updateTargeted={updateTargeted}
-								targeted={targeted}
-								removeTargeted={removeTargeted}
-								clickMode={clickMode}
-								handleScanCloakedShip={handleScanCloakedShip}
-							/>
-						</Grid>
-					))}
-				</Grid>
+				<div className='GridSpacing'>
+					<Grid width={width} container justifyContent={'center'} spacing={0} columns={gridSize}>
+						{myGridkeys.map((key) => (
+							<Grid item xs={axisX}>
+								<Square
+									key={key}
+									title={key}
+									bg={bg}
+									shipLocations={shipsToPass}
+									axis={axisX}
+									updateTargeted={updateTargeted}
+									targeted={targeted}
+									removeTargeted={removeTargeted}
+									clickMode={clickMode}
+									handleScanCloakedShip={handleScanCloakedShip}
+								/>
+							</Grid>
+						))}
+					</Grid>
+				</div>
 			</div>
-			<Button
-				variant='contained'
-				color='error'
-				onClick={() => {
-					console.log('fire');
-					Fire();
-				}}
-			>
-				Fire!
-			</Button>
+			<div className='GameSpaceVertical'>
+				<Button
+					variant='contained'
+					color='error'
+					onClick={() => {
+						console.log('fire');
+						Fire();
+					}}
+				>
+					Fire!
+				</Button>
+			</div>
 			<Dialog
 				open={fireDialogueOpen}
 				onClose={handleClose}
