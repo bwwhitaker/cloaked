@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Paper, Button } from '@mui/material';
+import { Paper, Button, Snackbar, Alert, AlertTitle } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { Dialog, DialogContent, DialogContentText, DialogTitle, DialogActions } from '@mui/material';
 
 function Square(props) {
 	const [currentBackgroundColor, setCurrentBackgroundColor] = useState(props.bg);
@@ -91,22 +90,16 @@ function Square(props) {
 					{props.title}
 				</ButtonPlace>
 			</PaperPlace>
-			<Dialog
-				open={scanDialogueOpen}
-				onClose={handleClose}
-				aria-labelledby='alert-dialog-title'
-				aria-describedby='alert-dialog-description'
-			>
-				<DialogTitle id='alert-dialog-title'>{'Game Over!'}</DialogTitle>
-				<DialogContent>
-					<DialogContentText id='alert-dialog-description'>{`Your scans alerted the enemy and they fired on you first. You lose!`}</DialogContentText>
-				</DialogContent>
-				<DialogActions>
-					<Button onClick={handleClose} autoFocus>
+
+			<Snackbar open={scanDialogueOpen} onClose={handleClose} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+				<Alert variant='filled' severity='error' onClose={handleClose}>
+					<AlertTitle>Game Over!</AlertTitle>
+					<div>Your scans alerted the enemy and they fired first.</div>
+					<Button color='inherit' variant='outlined' onClick={handleClose} autoFocus>
 						Reset Game
 					</Button>
-				</DialogActions>
-			</Dialog>
+				</Alert>
+			</Snackbar>
 		</div>
 	);
 }

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import Square from './Square';
-import { Grid, Button } from '@mui/material';
+import { Grid, Button, Snackbar, Alert, AlertTitle } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { Dialog, DialogContent, DialogContentText, DialogTitle, DialogActions } from '@mui/material';
 import './GameSpace.css';
 
 function SearchGrid(props) {
@@ -20,9 +19,9 @@ function SearchGrid(props) {
 	const updateTargeted = (id) => {
 		setTargeted((prevTargeted) => [...prevTargeted, id]);
 	};
-	const [fireDialogueOpen, setFireDialogueOpen] = useState(false);
+	const [fireSnackbarOpen, setFireSnackbarOpen] = useState(false);
 	const handleClose = (value) => {
-		setFireDialogueOpen(!fireDialogueOpen);
+		setFireSnackbarOpen(!fireSnackbarOpen);
 		props.setReadyToPlay(false);
 		props.setShipLocations([]);
 	};
@@ -31,11 +30,13 @@ function SearchGrid(props) {
 		props.setReadyToPlay(false);
 		props.setShipLocations([]);
 	};
-	const [dialogueTitle, setDialogueTitle] = useState('');
 
-	const [dialogueMessage, setDialogueMessage] = useState('');
-
+	const [snackbarMessage1, setSnackbarMessage1] = useState('');
+	const [snackbarTitle, setSnackbarTitle] = useState('');
 	const [clickMode, setClickMode] = useState('Scan');
+	const [snackbarMessage2, setSnackbarMessage2] = useState('');
+
+	const [fireSnackbarColor, setFireSnackbarColor] = useState('');
 
 	// console.log(clickMode);
 
@@ -64,15 +65,22 @@ function SearchGrid(props) {
 
 	function Fire() {
 		if (JSON.stringify(shipsToPass.sort()) === JSON.stringify(targeted.sort())) {
-			setFireDialogueOpen(true);
-			setDialogueMessage('You found all of the ships and destroyed them. You win!');
-			setDialogueTitle('Congrats!');
+			setFireSnackbarOpen(true);
+			setSnackbarMessage1('You found and destroyed all of the ships!');
+			setFireSnackbarColor('success');
+			setSnackbarTitle('You Win!');
 		} else {
-			setFireDialogueOpen(true);
-			setDialogueTitle('Game Over!');
-			setDialogueMessage(
-				`Your scans were not accurate. Ships were in cells: ${shipsToPass.sort()} They fired back and destroyed your ship. You lose!`
-			);
+			let hiddenShips = shipsToPass.sort();
+			setFireSnackbarOpen(true);
+			setFireSnackbarColor('error');
+			setSnackbarTitle('Game Over!');
+			if (ships === 1) {
+				setSnackbarMessage1(`Your scans were not accurate. They fired back and destroyed your ship.`);
+				setSnackbarMessage2(`The ship was in cell: ${hiddenShips.toString().replace(/,/g, ', ')}.`);
+			} else {
+				setSnackbarMessage1(`Your scans were not accurate. They fired back and destroyed your ship.`);
+				setSnackbarMessage2(`Ships were in cells: ${hiddenShips.toString().replace(/,/g, ', ')}.`);
+			}
 		}
 	}
 
@@ -176,22 +184,17 @@ function SearchGrid(props) {
 					Fire!
 				</Button>
 			</div>
-			<Dialog
-				open={fireDialogueOpen}
-				onClose={handleClose}
-				aria-labelledby='alert-dialog-title'
-				aria-describedby='alert-dialog-description'
-			>
-				<DialogTitle id='alert-dialog-title'>{dialogueTitle}</DialogTitle>
-				<DialogContent>
-					<DialogContentText id='alert-dialog-description'>{dialogueMessage}</DialogContentText>
-				</DialogContent>
-				<DialogActions>
-					<Button onClick={handleClose} autoFocus>
+
+			<Snackbar open={fireSnackbarOpen} onClose={handleClose} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+				<Alert variant='filled' severity={fireSnackbarColor} onClose={handleClose}>
+					<AlertTitle>{snackbarTitle}</AlertTitle>
+					<div>{snackbarMessage1}</div>
+					<div>{snackbarMessage2}</div>
+					<Button color='inherit' variant='outlined' onClick={handleClose} autoFocus>
 						Reset Game
 					</Button>
-				</DialogActions>
-			</Dialog>
+				</Alert>
+			</Snackbar>
 		</div>
 	);
 }
