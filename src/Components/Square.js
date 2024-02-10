@@ -5,6 +5,13 @@ import { styled } from '@mui/material/styles';
 function Square(props) {
 	const [currentBackgroundColor, setCurrentBackgroundColor] = useState(props.bg);
 	const shipLocations = props.shipLocations;
+	const [snackbarMessageClick, setSnackbarMessageClick] = useState('');
+	const hiddenShips = shipLocations
+		.sort(function (a, b) {
+			return a - b;
+		})
+		.toString()
+		.replace(/,/g, ', ');
 	const axis = props.axis;
 	const targeted = props.targeted;
 	const [scanDialogueOpen, setScanDialogueOpen] = useState(false);
@@ -24,6 +31,12 @@ function Square(props) {
 		let b = id + 1;
 		let c = id - axis;
 		let d = id + axis;
+
+		if (shipLocations.length === 1) {
+			setSnackbarMessageClick('Your scans alerted the enemy and they fired first. The ship was in cell:');
+		} else {
+			setSnackbarMessageClick('Your scans alerted the enemy and they fired first. Ships were in cells:');
+		}
 
 		if (isInArray(id, shipLocations) && clickMode === 'Scan' && isInArray(id, targeted)) {
 			setCurrentBackgroundColor('red');
@@ -97,8 +110,7 @@ function Square(props) {
 				<Alert variant='filled' severity='error' onClose={handleClose}>
 					<AlertTitle>Game Over!</AlertTitle>
 					<div>
-						Your scans alerted the enemy and they fired first. The ships were located in:{' '}
-						{shipLocations.sort().toString().replace(/,/g, ', ')}
+						{snackbarMessageClick} {hiddenShips}
 					</div>
 					<Button color='inherit' variant='outlined' onClick={handleClose} autoFocus>
 						Reset Game

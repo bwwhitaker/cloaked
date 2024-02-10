@@ -70,16 +70,21 @@ function SearchGrid(props) {
 			setFireSnackbarColor('success');
 			setSnackbarTitle('You Win!');
 		} else {
-			let hiddenShips = shipsToPass.sort();
+			let hiddenShips = shipsToPass
+				.sort(function (a, b) {
+					return a - b;
+				})
+				.toString()
+				.replace(/,/g, ', ');
 			setFireSnackbarOpen(true);
 			setFireSnackbarColor('error');
 			setSnackbarTitle('Game Over!');
 			if (ships === 1) {
 				setSnackbarMessage1(`Your scans were not accurate. They fired back and destroyed your ship.`);
-				setSnackbarMessage2(`The ship was in cell: ${hiddenShips.toString().replace(/,/g, ', ')}.`);
+				setSnackbarMessage2(`The ship was in cell: ${hiddenShips}.`);
 			} else {
 				setSnackbarMessage1(`Your scans were not accurate. They fired back and destroyed your ship.`);
-				setSnackbarMessage2(`Ships were in cells: ${hiddenShips.toString().replace(/,/g, ', ')}.`);
+				setSnackbarMessage2(`Ships were in cells: ${hiddenShips}.`);
 			}
 		}
 	}
