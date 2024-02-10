@@ -15,8 +15,14 @@ function InstructionModule(props) {
 				<List dense={true}>
 					<ListItem>
 						<Typography variant='body2'>
-							You will begin in "Scan" mode. Click on a square to scan for cloaked ships. Scans can not be made
-							diagonally. The scan determines if a ship is in the clicked square or in one up, down, left, or right.
+							You will begin in "Scan" mode. Click on a square to scan for cloaked ships. By default Diagonal Mode is
+							Off and scans can not be made diagonally.
+						</Typography>
+					</ListItem>
+					<ListItem>
+						<Typography variant='body2'>
+							When Diagonal Mode is Off the scanner only checks if a ship is in a cell above, below, to the left or to
+							the right. When Diagonal Mode is On, also checks the cells diagonally from it.
 						</Typography>
 					</ListItem>
 
@@ -28,8 +34,8 @@ function InstructionModule(props) {
 
 					<ListItem>
 						<Typography variant='body2'>
-							If the cell is Blue, there is at least 1 cloaked ship next to the square. This could be up, down, left, or
-							right. There could be more than 1 cloaked ship next to the square.
+							If the cell is Blue, there is at least 1 cloaked ship next to the square. There could be more than 1
+							cloaked ship next to the scanned square.
 						</Typography>
 					</ListItem>
 
@@ -41,9 +47,9 @@ function InstructionModule(props) {
 
 					<ListItem>
 						<Typography variant='body2'>
-							If you think you know a ship's location, you need to Lock Target. Click on the "Target" button to go into
-							Targeting mode. Then click the square. Targetted squares are Green. Targetting doesn't mean a ship is
-							located in the targeted cell.
+							If you think you know a ship's location, you need to Lock Target. To do so, click on the "Target" button
+							to activate Targeting mode. Then click the square. Targetted squares are Green. Targetting doesn't mean a
+							ship is located in the targeted cell.
 						</Typography>
 					</ListItem>
 

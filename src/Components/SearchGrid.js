@@ -11,6 +11,8 @@ function SearchGrid(props) {
 	const ships = parseInt(props.ships);
 	const bg = props.fieldBg;
 	const shipsToPass = props.shipLocations;
+	const diagonalMode = props.diagonalMode;
+	const diagonalModeStatus = props.diagonalModeStatus;
 	const [targeted, setTargeted] = useState([]);
 	const [scanBackground, setScanBackground] = useState('Blue');
 	const [targetBackground, setTargetBackground] = useState('');
@@ -117,6 +119,7 @@ function SearchGrid(props) {
 		<div>
 			<div className='CenterAligning'>
 				<div className='GameSpaceVertical'>{message}</div>
+				<div className='DiagonalModeMessage'>Diagnonal Scannning Mode is {diagonalModeStatus}.</div>
 				<div className='GameSpaceVertical'>
 					Mode:
 					<ScanButton
@@ -171,6 +174,7 @@ function SearchGrid(props) {
 									removeTargeted={removeTargeted}
 									clickMode={clickMode}
 									handleScanCloakedShip={handleScanCloakedShip}
+									diagonalMode={diagonalMode}
 								/>
 							</Grid>
 						))}

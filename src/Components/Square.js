@@ -13,6 +13,7 @@ function Square(props) {
 		.toString()
 		.replace(/,/g, ', ');
 	const axis = props.axis;
+	const diagonalMode = props.diagonalMode;
 	const targeted = props.targeted;
 	const [scanDialogueOpen, setScanDialogueOpen] = useState(false);
 	const handleClose = (value) => {
@@ -31,6 +32,10 @@ function Square(props) {
 		let b = id + 1;
 		let c = id - axis;
 		let d = id + axis;
+		let e = id - axis - 1;
+		let f = id - axis + 1;
+		let g = id + axis - 1;
+		let h = id + axis + 1;
 
 		if (shipLocations.length === 1) {
 			setSnackbarMessageClick('Your scans alerted the enemy and they fired first. The ship was in cell:');
@@ -70,6 +75,14 @@ function Square(props) {
 		} else if (isInArray(c, shipLocations)) {
 			setCurrentBackgroundColor('blue');
 		} else if (isInArray(d, shipLocations)) {
+			setCurrentBackgroundColor('blue');
+		} else if (isInArray(e, shipLocations) && e % axis !== 0 && diagonalMode === true) {
+			setCurrentBackgroundColor('blue');
+		} else if (isInArray(f, shipLocations) && f % axis !== 1 && diagonalMode === true) {
+			setCurrentBackgroundColor('blue');
+		} else if (isInArray(g, shipLocations) && g % axis !== 0 && diagonalMode === true) {
+			setCurrentBackgroundColor('blue');
+		} else if (isInArray(h, shipLocations) && h % axis !== 1 && diagonalMode === true) {
 			setCurrentBackgroundColor('blue');
 		} else {
 			setCurrentBackgroundColor('black');

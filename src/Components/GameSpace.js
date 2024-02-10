@@ -4,6 +4,7 @@ import { Grid, Button } from '@mui/material';
 import SearchGrid from './SearchGrid';
 import InstructionModule from './InstructionModule';
 import './GameSpace.css';
+import { lightBlue } from '@mui/material/colors';
 
 function GameSpace() {
 	const generateUniqueRandomNumbers = (count, maxValue, existingArray) => {
@@ -22,7 +23,8 @@ function GameSpace() {
 	const [fieldBg, setFieldBg] = useState('white');
 	const [shipLocations, setShipLocations] = useState([]);
 	const [openInstructions, setOpenInstructions] = useState(false);
-
+	const [diagonalMode, setDiagonalMode] = useState(false);
+	const [diagonalModeStatus, setDiagonalModeStatus] = useState('Off');
 	const axisMarks = [
 		{
 			value: 4,
@@ -81,6 +83,8 @@ function GameSpace() {
 		setShipLocations(newShipLocations);
 	};
 
+	console.log(diagonalMode);
+
 	return (
 		<div>
 			<div hidden={readyToPlay}>
@@ -109,6 +113,22 @@ function GameSpace() {
 						max={5}
 						onChangeCommitted={changeShips}
 					/>
+					Diagnonal Mode:
+					<Button
+						variant='text'
+						color='error'
+						label={diagonalMode}
+						onClick={() => {
+							setDiagonalMode(!diagonalMode);
+							if (diagonalModeStatus === 'Off') {
+								setDiagonalModeStatus('On');
+							} else {
+								setDiagonalModeStatus('Off');
+							}
+						}}
+					>
+						{diagonalModeStatus}
+					</Button>
 				</Grid>
 				<div className='CenterAligning'>
 					<Button
@@ -128,7 +148,12 @@ function GameSpace() {
 				<div>
 					<div className='HeaderRow'>
 						<Button
-							variant='outlined'
+							sx={{
+								color: lightBlue[800],
+								'&.Mui-checked': {
+									color: lightBlue[600],
+								},
+							}}
 							onClick={() => {
 								setReadyToPlay(!readyToPlay);
 								setFieldBg('white');
@@ -155,6 +180,8 @@ function GameSpace() {
 						shipLocations={shipLocations}
 						setReadyToPlay={setReadyToPlay}
 						setShipLocations={setShipLocations}
+						diagonalMode={diagonalMode}
+						diagonalModeStatus={diagonalModeStatus}
 					/>
 				</div>
 			)}

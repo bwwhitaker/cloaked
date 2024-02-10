@@ -23,3 +23,7 @@
 .MuiSlider-markLabel {
 	color: #e0e3df !important;
 }
+
+.DiagonalModeMessage {
+	font-size: 1rem;
+}
