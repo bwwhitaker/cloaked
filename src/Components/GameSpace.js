@@ -88,6 +88,17 @@ function GameSpace() {
 	return (
 		<div>
 			<div hidden={readyToPlay}>
+				<div className='HeaderRow'>
+					<Button
+						variant='text'
+						onClick={() => {
+							setOpenInstructions(true);
+							//console.log('opening');
+						}}
+					>
+						Show Instructions
+					</Button>
+				</div>
 				<h1>Welcome to Cloaked!</h1>
 				<p>Prepare to hunt for cloaked enemy ships.</p>
 				<Grid container>
@@ -116,7 +127,7 @@ function GameSpace() {
 					Diagnonal Mode:
 					<Button
 						variant='text'
-						color='error'
+						color='primary'
 						label={diagonalMode}
 						onClick={() => {
 							setDiagonalMode(!diagonalMode);
