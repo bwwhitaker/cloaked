@@ -96,7 +96,10 @@ function Square(props) {
 			<Snackbar open={scanDialogueOpen} onClose={handleClose} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
 				<Alert variant='filled' severity='error' onClose={handleClose}>
 					<AlertTitle>Game Over!</AlertTitle>
-					<div>Your scans alerted the enemy and they fired first.</div>
+					<div>
+						Your scans alerted the enemy and they fired first. The ships were located in:{' '}
+						{shipLocations.sort().toString().replace(/,/g, ', ')}
+					</div>
 					<Button color='inherit' variant='outlined' onClick={handleClose} autoFocus>
 						Reset Game
 					</Button>
