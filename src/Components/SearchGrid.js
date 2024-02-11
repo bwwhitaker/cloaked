@@ -38,7 +38,7 @@ function SearchGrid(props) {
 	const [clickMode, setClickMode] = useState('Scan');
 	const [snackbarMessage2, setSnackbarMessage2] = useState('');
 
-	const [fireSnackbarColor, setFireSnackbarColor] = useState('');
+	const [fireSnackbarColor, setFireSnackbarColor] = useState('warning');
 
 	// console.log(clickMode);
 
@@ -162,7 +162,7 @@ function SearchGrid(props) {
 				<div className='GridSpacing'>
 					<Grid width={width} container justifyContent={'center'} spacing={0} columns={gridSize}>
 						{myGridkeys.map((key) => (
-							<Grid item xs={axisX}>
+							<Grid item xs={axisX} key={key}>
 								<Square
 									key={key}
 									title={key}

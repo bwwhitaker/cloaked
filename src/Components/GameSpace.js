@@ -83,8 +83,6 @@ function GameSpace() {
 		setShipLocations(newShipLocations);
 	};
 
-	console.log(diagonalMode);
-
 	return (
 		<div>
 			<div hidden={readyToPlay}>
@@ -128,7 +126,6 @@ function GameSpace() {
 					<Button
 						variant='text'
 						color='primary'
-						label={diagonalMode}
 						onClick={() => {
 							setDiagonalMode(!diagonalMode);
 							if (diagonalModeStatus === 'Off') {
