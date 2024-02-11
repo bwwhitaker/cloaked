@@ -10,15 +10,15 @@ function InstructionModule(props) {
 	return (
 		<Dialog onClose={handleClose} open={props.openInstructions}>
 			<DialogContent>
-				<Typography variant='h5'>Welcome! Searching for cloaked ships is easy:</Typography>
+				<Typography variant='h5'>Welcome! Searching for cloaked ships is easy!</Typography>
 				<Typography variant='h6'>1. Scanning for Ships:</Typography>
 				<Typography variant='body2'>You start in "Scan" mode. click on a square to check for hidden ships.</Typography>
 				<Typography variant='body2'></Typography>
 				<Typography variant='h6'>2. Diagonal Mode:</Typography>
 				<Typography variant='body2'>
-					With Diagonal Mode Off, scans only check for ships in the cardinal directions.
+					With Diagonal Mode Off, scans check for cloaked ships up, down, left, or right.
 				</Typography>
-				<Typography variant='body2'>Turn Diagonal Mode On to include diagonal cells in your scans.</Typography>
+				<Typography variant='body2'>Turn Diagonal Mode On to include diagonal scans in your search.</Typography>
 				<Typography variant='h6'>3. Scan Results:</Typography>
 				<Typography variant='body2'>Black means no ship detected in the clicked or neighboring squares.</Typography>
 				<Typography variant='body2'>Blue indicates at least one cloaked ship nearby.</Typography>
