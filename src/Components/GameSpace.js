@@ -122,7 +122,7 @@ function GameSpace() {
 						max={5}
 						onChangeCommitted={changeShips}
 					/>
-					Diagnonal Mode:
+					Diagonal Mode:
 					<Button
 						variant='text'
 						color='primary'
