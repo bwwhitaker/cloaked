@@ -119,7 +119,7 @@ function SearchGrid(props) {
 		<div>
 			<div className='CenterAligning'>
 				<div className='GameSpaceVertical'>{message}</div>
-				<div className='DiagonalModeMessage'>Diagnonal Scannning Mode is {diagonalModeStatus}.</div>
+				<div className='DiagonalModeMessage'>Diagonal Scannning Mode is {diagonalModeStatus}.</div>
 				<div className='GameSpaceVertical'>
 					Mode:
 					<ScanButton
