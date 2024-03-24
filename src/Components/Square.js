@@ -45,17 +45,20 @@ function Square(props) {
 
 		if (isInArray(id, shipLocations) && clickMode === 'Scan' && isInArray(id, targeted)) {
 			setCurrentBackgroundColor('red');
+			setCurrentFontColor('white');
 			props.removeTargeted(id);
 			setTimeout(() => {
 				setScanDialogueOpen(true);
 			}, 200);
 		} else if (isInArray(id, shipLocations) && clickMode === 'Scan') {
 			setCurrentBackgroundColor('red');
+			setCurrentFontColor('white');
 			setTimeout(() => {
 				setScanDialogueOpen(true);
 			}, 200);
 		} else if (clickMode === 'Target') {
 			setCurrentBackgroundColor('green');
+			setCurrentFontColor('white');
 			props.updateTargeted(id);
 		} else if (clickMode === 'Unlock' && isInArray(id, targeted)) {
 			setCurrentBackgroundColor('white');
@@ -70,20 +73,28 @@ function Square(props) {
 			setCurrentFontColor('black');
 		} else if (isInArray(a, shipLocations) && id % axis !== 1) {
 			setCurrentBackgroundColor('blue');
+			setCurrentFontColor('white');
 		} else if (isInArray(b, shipLocations) && id % axis !== 0) {
 			setCurrentBackgroundColor('blue');
+			setCurrentFontColor('white');
 		} else if (isInArray(c, shipLocations)) {
 			setCurrentBackgroundColor('blue');
+			setCurrentFontColor('white');
 		} else if (isInArray(d, shipLocations)) {
 			setCurrentBackgroundColor('blue');
+			setCurrentFontColor('white');
 		} else if (isInArray(e, shipLocations) && e % axis !== 0 && diagonalMode === true) {
 			setCurrentBackgroundColor('blue');
+			setCurrentFontColor('white');
 		} else if (isInArray(f, shipLocations) && f % axis !== 1 && diagonalMode === true) {
 			setCurrentBackgroundColor('blue');
+			setCurrentFontColor('white');
 		} else if (isInArray(g, shipLocations) && g % axis !== 0 && diagonalMode === true) {
 			setCurrentBackgroundColor('blue');
+			setCurrentFontColor('white');
 		} else if (isInArray(h, shipLocations) && h % axis !== 1 && diagonalMode === true) {
 			setCurrentBackgroundColor('blue');
+			setCurrentFontColor('white');
 		} else {
 			setCurrentBackgroundColor('black');
 			setCurrentFontColor('white');
@@ -101,7 +112,6 @@ function Square(props) {
 		transition: 'background-color 0.3s ease',
 		'&:hover': {
 			cursor: 'pointer',
-			color: 'blue',
 		},
 		color: currentFontColor,
 	}));
