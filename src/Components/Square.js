@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Paper, Button, Snackbar, Alert, AlertTitle } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import Scanning from './Scanning';
 
 function Square(props) {
 	const [currentBackgroundColor, setCurrentBackgroundColor] = useState(props.bg);
@@ -26,12 +27,20 @@ function Square(props) {
 		return array.includes(value);
 	};
 
-	const updateColors = (backgroundColor, fontColor, delay = 10) => {
+	const updateColors = (backgroundColor, fontColor, delay = 0) => {
 		setTimeout(() => {
 			setCurrentBackgroundColor(backgroundColor);
 			setCurrentFontColor(fontColor);
 		}, delay);
 	};
+
+	const [scanning, setScanning] = useState(false);
+	function showScanning() {
+		setScanning(true);
+		setTimeout(function () {
+			setScanning(false);
+		}, 500);
+	}
 
 	function SquareClick(id) {
 		const clickMode = props.clickMode;
@@ -43,6 +52,9 @@ function Square(props) {
 		let f = id - axis + 1;
 		let g = id + axis - 1;
 		let h = id + axis + 1;
+		if (clickMode !== 'Target') {
+			showScanning();
+		}
 
 		if (shipLocations.length === 1) {
 			setSnackbarMessageClick('Your scans alerted the enemy and they fired first. The ship was in cell:');
@@ -53,14 +65,15 @@ function Square(props) {
 		if (isInArray(id, shipLocations) && clickMode === 'Scan' && isInArray(id, targeted)) {
 			updateColors('red', 'white');
 			props.removeTargeted(id);
+			setScanning(true);
 			setTimeout(() => {
 				setScanDialogueOpen(true);
-			}, 200);
+			}, 1000);
 		} else if (isInArray(id, shipLocations) && clickMode === 'Scan') {
 			updateColors('red', 'white');
 			setTimeout(() => {
 				setScanDialogueOpen(true);
-			}, 200);
+			}, 1000);
 		} else if (clickMode === 'Target') {
 			updateColors('green', 'white');
 			props.updateTargeted(id);
@@ -110,16 +123,20 @@ function Square(props) {
 
 	return (
 		<div>
-			<PaperPlace
-				square
-				variant='outlined'
-				key={props.title}
-				onClick={() => {
-					SquareClick(props.title);
-				}}
-			>
-				{props.title}
-			</PaperPlace>
+			{scanning ? (
+				<Scanning />
+			) : (
+				<PaperPlace
+					square
+					variant='outlined'
+					key={props.title}
+					onClick={() => {
+						SquareClick(props.title);
+					}}
+				>
+					{props.title}
+				</PaperPlace>
+			)}
 
 			<Snackbar open={scanDialogueOpen} onClose={handleClose} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
 				<Alert variant='filled' severity='error' onClose={handleClose}>
