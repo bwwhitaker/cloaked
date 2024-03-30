@@ -26,6 +26,7 @@ function Square(props) {
 		return array.includes(value);
 	};
 
+	const updateColors = (backgroundColor, fontColor, delay = 10) => {
 	function SquareClick(id) {
 		const clickMode = props.clickMode;
 		let a = id - 1;
