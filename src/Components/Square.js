@@ -27,7 +27,7 @@ function Square(props) {
 		return array.includes(value);
 	};
 
-	const updateColors = (backgroundColor, fontColor, delay = 0) => {
+	const updateColors = (backgroundColor, fontColor, delay) => {
 		setTimeout(() => {
 			setCurrentBackgroundColor(backgroundColor);
 			setCurrentFontColor(fontColor);
@@ -39,7 +39,7 @@ function Square(props) {
 		setScanning(true);
 		setTimeout(function () {
 			setScanning(false);
-		}, 500);
+		}, 400);
 	}
 
 	function SquareClick(id) {
@@ -63,46 +63,46 @@ function Square(props) {
 		}
 
 		if (isInArray(id, shipLocations) && clickMode === 'Scan' && isInArray(id, targeted)) {
-			updateColors('red', 'white');
+			updateColors('red', 'white', 400);
 			props.removeTargeted(id);
 			setScanning(true);
 			setTimeout(() => {
 				setScanDialogueOpen(true);
-			}, 1000);
+			}, 400);
 		} else if (isInArray(id, shipLocations) && clickMode === 'Scan') {
-			updateColors('red', 'white');
+			updateColors('red', 'white', 400);
 			setTimeout(() => {
 				setScanDialogueOpen(true);
-			}, 1000);
+			}, 400);
 		} else if (clickMode === 'Target') {
-			updateColors('green', 'white');
+			updateColors('green', 'white', 0);
 			props.updateTargeted(id);
 		} else if (clickMode === 'Unlock' && isInArray(id, targeted)) {
-			updateColors('black', 'white');
+			updateColors('black', 'white', 400);
 			props.removeTargeted(id);
 		} else if (clickMode === 'Scan' && isInArray(id, targeted)) {
-			updateColors('black', 'white');
+			updateColors('black', 'white', 400);
 			props.removeTargeted(id);
 		} else if (clickMode === 'Unlock') {
-			updateColors('white', 'black');
+			updateColors('white', 'black', 400);
 		} else if (isInArray(a, shipLocations) && id % axis !== 1) {
-			updateColors('blue', 'white');
+			updateColors('blue', 'white', 400);
 		} else if (isInArray(b, shipLocations) && id % axis !== 0) {
-			updateColors('blue', 'white');
+			updateColors('blue', 'white', 400);
 		} else if (isInArray(c, shipLocations)) {
-			updateColors('blue', 'white');
+			updateColors('blue', 'white', 400);
 		} else if (isInArray(d, shipLocations)) {
-			updateColors('blue', 'white');
+			updateColors('blue', 'white', 400);
 		} else if (isInArray(e, shipLocations) && e % axis !== 0 && diagonalMode === true) {
-			updateColors('blue', 'white');
+			updateColors('blue', 'white', 400);
 		} else if (isInArray(f, shipLocations) && f % axis !== 1 && diagonalMode === true) {
-			updateColors('blue', 'white');
+			updateColors('blue', 'white', 400);
 		} else if (isInArray(g, shipLocations) && g % axis !== 0 && diagonalMode === true) {
-			updateColors('blue', 'white');
+			updateColors('blue', 'white', 400);
 		} else if (isInArray(h, shipLocations) && h % axis !== 1 && diagonalMode === true) {
-			updateColors('blue', 'white');
+			updateColors('blue', 'white', 400);
 		} else {
-			updateColors('black', 'white');
+			updateColors('black', 'white', 400);
 		}
 	}
 
@@ -123,20 +123,17 @@ function Square(props) {
 
 	return (
 		<div>
-			{scanning ? (
-				<Scanning />
-			) : (
-				<PaperPlace
-					square
-					variant='outlined'
-					key={props.title}
-					onClick={() => {
-						SquareClick(props.title);
-					}}
-				>
-					{props.title}
-				</PaperPlace>
-			)}
+			<PaperPlace
+				square
+				variant='outlined'
+				key={props.title}
+				onClick={() => {
+					SquareClick(props.title);
+				}}
+			>
+				{' '}
+				{scanning ? <Scanning /> : props.title}
+			</PaperPlace>
 
 			<Snackbar open={scanDialogueOpen} onClose={handleClose} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
 				<Alert variant='filled' severity='error' onClose={handleClose}>
