@@ -27,6 +27,12 @@ function Square(props) {
 	};
 
 	const updateColors = (backgroundColor, fontColor, delay = 10) => {
+		setTimeout(() => {
+			setCurrentBackgroundColor(backgroundColor);
+			setCurrentFontColor(fontColor);
+		}, delay);
+	};
+
 	function SquareClick(id) {
 		const clickMode = props.clickMode;
 		let a = id - 1;
@@ -45,60 +51,45 @@ function Square(props) {
 		}
 
 		if (isInArray(id, shipLocations) && clickMode === 'Scan' && isInArray(id, targeted)) {
-			setCurrentBackgroundColor('red');
-			setCurrentFontColor('white');
+			updateColors('red', 'white');
 			props.removeTargeted(id);
 			setTimeout(() => {
 				setScanDialogueOpen(true);
 			}, 200);
 		} else if (isInArray(id, shipLocations) && clickMode === 'Scan') {
-			setCurrentBackgroundColor('red');
-			setCurrentFontColor('white');
+			updateColors('red', 'white');
 			setTimeout(() => {
 				setScanDialogueOpen(true);
 			}, 200);
 		} else if (clickMode === 'Target') {
-			setCurrentBackgroundColor('green');
-			setCurrentFontColor('white');
+			updateColors('green', 'white');
 			props.updateTargeted(id);
 		} else if (clickMode === 'Unlock' && isInArray(id, targeted)) {
-			setCurrentBackgroundColor('white');
-			setCurrentFontColor('black');
+			updateColors('black', 'white');
 			props.removeTargeted(id);
 		} else if (clickMode === 'Scan' && isInArray(id, targeted)) {
-			setCurrentBackgroundColor('black');
-			setCurrentFontColor('white');
+			updateColors('black', 'white');
 			props.removeTargeted(id);
 		} else if (clickMode === 'Unlock') {
-			setCurrentBackgroundColor('white');
-			setCurrentFontColor('black');
+			updateColors('white', 'black');
 		} else if (isInArray(a, shipLocations) && id % axis !== 1) {
-			setCurrentBackgroundColor('blue');
-			setCurrentFontColor('white');
+			updateColors('blue', 'white');
 		} else if (isInArray(b, shipLocations) && id % axis !== 0) {
-			setCurrentBackgroundColor('blue');
-			setCurrentFontColor('white');
+			updateColors('blue', 'white');
 		} else if (isInArray(c, shipLocations)) {
-			setCurrentBackgroundColor('blue');
-			setCurrentFontColor('white');
+			updateColors('blue', 'white');
 		} else if (isInArray(d, shipLocations)) {
-			setCurrentBackgroundColor('blue');
-			setCurrentFontColor('white');
+			updateColors('blue', 'white');
 		} else if (isInArray(e, shipLocations) && e % axis !== 0 && diagonalMode === true) {
-			setCurrentBackgroundColor('blue');
-			setCurrentFontColor('white');
+			updateColors('blue', 'white');
 		} else if (isInArray(f, shipLocations) && f % axis !== 1 && diagonalMode === true) {
-			setCurrentBackgroundColor('blue');
-			setCurrentFontColor('white');
+			updateColors('blue', 'white');
 		} else if (isInArray(g, shipLocations) && g % axis !== 0 && diagonalMode === true) {
-			setCurrentBackgroundColor('blue');
-			setCurrentFontColor('white');
+			updateColors('blue', 'white');
 		} else if (isInArray(h, shipLocations) && h % axis !== 1 && diagonalMode === true) {
-			setCurrentBackgroundColor('blue');
-			setCurrentFontColor('white');
+			updateColors('blue', 'white');
 		} else {
-			setCurrentBackgroundColor('black');
-			setCurrentFontColor('white');
+			updateColors('black', 'white');
 		}
 	}
 
