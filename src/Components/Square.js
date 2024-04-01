@@ -39,7 +39,7 @@ function Square(props) {
 		setScanning(true);
 		setTimeout(function () {
 			setScanning(false);
-		}, 400);
+		}, 250);
 	}
 
 	function SquareClick(id) {
@@ -63,46 +63,46 @@ function Square(props) {
 		}
 
 		if (isInArray(id, shipLocations) && clickMode === 'Scan' && isInArray(id, targeted)) {
-			updateColors('red', 'white', 400);
+			updateColors('red', 'white', 250);
 			props.removeTargeted(id);
 			setScanning(true);
 			setTimeout(() => {
 				setScanDialogueOpen(true);
-			}, 400);
+			}, 250);
 		} else if (isInArray(id, shipLocations) && clickMode === 'Scan') {
-			updateColors('red', 'white', 400);
+			updateColors('red', 'white', 250);
 			setTimeout(() => {
 				setScanDialogueOpen(true);
-			}, 400);
+			}, 250);
 		} else if (clickMode === 'Target') {
 			updateColors('green', 'white', 0);
 			props.updateTargeted(id);
 		} else if (clickMode === 'Unlock' && isInArray(id, targeted)) {
-			updateColors('black', 'white', 400);
+			updateColors('black', 'white', 250);
 			props.removeTargeted(id);
 		} else if (clickMode === 'Scan' && isInArray(id, targeted)) {
-			updateColors('black', 'white', 400);
+			updateColors('black', 'white', 250);
 			props.removeTargeted(id);
 		} else if (clickMode === 'Unlock') {
-			updateColors('white', 'black', 400);
+			updateColors('white', 'black', 250);
 		} else if (isInArray(a, shipLocations) && id % axis !== 1) {
-			updateColors('blue', 'white', 400);
+			updateColors('blue', 'white', 250);
 		} else if (isInArray(b, shipLocations) && id % axis !== 0) {
-			updateColors('blue', 'white', 400);
+			updateColors('blue', 'white', 250);
 		} else if (isInArray(c, shipLocations)) {
-			updateColors('blue', 'white', 400);
+			updateColors('blue', 'white', 250);
 		} else if (isInArray(d, shipLocations)) {
-			updateColors('blue', 'white', 400);
+			updateColors('blue', 'white', 250);
 		} else if (isInArray(e, shipLocations) && e % axis !== 0 && diagonalMode === true) {
-			updateColors('blue', 'white', 400);
+			updateColors('blue', 'white', 250);
 		} else if (isInArray(f, shipLocations) && f % axis !== 1 && diagonalMode === true) {
-			updateColors('blue', 'white', 400);
+			updateColors('blue', 'white', 250);
 		} else if (isInArray(g, shipLocations) && g % axis !== 0 && diagonalMode === true) {
-			updateColors('blue', 'white', 400);
+			updateColors('blue', 'white', 250);
 		} else if (isInArray(h, shipLocations) && h % axis !== 1 && diagonalMode === true) {
-			updateColors('blue', 'white', 400);
+			updateColors('blue', 'white', 250);
 		} else {
-			updateColors('black', 'white', 400);
+			updateColors('black', 'white', 250);
 		}
 	}
 
