@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/cloaked/static/css/main.cfa0bf52.css",
-    "main.js": "/cloaked/static/js/main.e500ee13.js",
+    "main.js": "/cloaked/static/js/main.11cabb60.js",
     "static/js/787.8c18d6fd.chunk.js": "/cloaked/static/js/787.8c18d6fd.chunk.js",
     "index.html": "/cloaked/index.html",
     "main.cfa0bf52.css.map": "/cloaked/static/css/main.cfa0bf52.css.map",
-    "main.e500ee13.js.map": "/cloaked/static/js/main.e500ee13.js.map",
+    "main.11cabb60.js.map": "/cloaked/static/js/main.11cabb60.js.map",
     "787.8c18d6fd.chunk.js.map": "/cloaked/static/js/787.8c18d6fd.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.cfa0bf52.css",
-    "static/js/main.e500ee13.js"
+    "static/js/main.11cabb60.js"
   ]
 }
