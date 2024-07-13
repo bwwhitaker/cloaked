@@ -98,10 +98,10 @@ function GameSpace() {
 					</Button>
 				</div>
 				<h1>Welcome to Cloaked!</h1>
-				<p>Prepare to scan for cloaked enemy ships.</p>
+				<h3>Scanning Parameters:</h3>
 				<div className='grid-container'>
 					<Grid container>
-						Grid Size:
+						<h5>Grid Size:</h5>
 						<Slider
 							defaultValue={6}
 							aria-label='Grid Size'
@@ -112,7 +112,7 @@ function GameSpace() {
 							max={8}
 							onChangeCommitted={changeAxis}
 						/>
-						Cloaked Ships:
+						<h5>Cloaked Ships:</h5>
 						<Slider
 							defaultValue={2}
 							aria-label='Cloaked Ships Count'
@@ -123,21 +123,23 @@ function GameSpace() {
 							max={5}
 							onChangeCommitted={changeShips}
 						/>
-						Diagonal Mode:
-						<Button
-							variant='text'
-							color='primary'
-							onClick={() => {
-								setDiagonalMode(!diagonalMode);
-								if (diagonalModeStatus === 'Off') {
-									setDiagonalModeStatus('On');
-								} else {
-									setDiagonalModeStatus('Off');
-								}
-							}}
-						>
-							{diagonalModeStatus}
-						</Button>
+						<h5>
+							Diagonal Mode:
+							<Button
+								variant='text'
+								color='primary'
+								onClick={() => {
+									setDiagonalMode(!diagonalMode);
+									if (diagonalModeStatus === 'Off') {
+										setDiagonalModeStatus('On');
+									} else {
+										setDiagonalModeStatus('Off');
+									}
+								}}
+							>
+								{diagonalModeStatus}
+							</Button>
+						</h5>
 					</Grid>
 				</div>
 				<div className='CenterAligning'>

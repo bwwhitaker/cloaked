@@ -78,7 +78,7 @@ function Square(props) {
 			updateColors('green', 'white', 0);
 			props.updateTargeted(id);
 		} else if (clickMode === 'Unlock' && isInArray(id, targeted)) {
-			updateColors('black', 'white', 250);
+			updateColors('white', 'black', 250);
 			props.removeTargeted(id);
 		} else if (clickMode === 'Scan' && isInArray(id, targeted)) {
 			updateColors('black', 'white', 250);
