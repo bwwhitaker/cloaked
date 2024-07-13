@@ -1,3 +1,19 @@
+.instruction-module {
+	background-color: #0f1116;
+	color: white;
+}
+
 .padded {
 	padding-left: 25px;
+}
+
+.instruction-module Button {
+	margin-top: 10px;
+	left: 50%;
+	-ms-transform: translate(-50%, -50%);
+	transform: translate(-50%, -50%);
+}
+
+.center {
+	text-align: center;
 }

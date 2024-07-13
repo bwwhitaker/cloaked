@@ -1,7 +1,9 @@
 .HeaderRow {
 	position: fixed;
 	padding: 10px;
-	margin: 20px;
+	margin-top: 10px;
+	margin-left: 20px;
+	margin-bottom: 20px;
 	top: 0;
 	left: 0;
 }
@@ -9,6 +11,7 @@
 .GameSpaceVertical {
 	margin-top: 20px;
 	margin-bottom: 20px;
+	cursor: default;
 }
 
 .CenterAligning {
@@ -26,4 +29,5 @@
 
 .DiagonalModeMessage {
 	font-size: 1rem;
+	cursor: default;
 }

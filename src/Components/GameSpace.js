@@ -94,11 +94,11 @@ function GameSpace() {
 							//console.log('opening');
 						}}
 					>
-						Show Instructions
+						Instructions
 					</Button>
 				</div>
 				<h1>Welcome to Cloaked!</h1>
-				<p>Prepare to hunt for cloaked enemy ships.</p>
+				<p>Prepare to scan for cloaked enemy ships.</p>
 				<Grid container>
 					Grid Size:
 					<Slider
@@ -177,7 +177,7 @@ function GameSpace() {
 								//console.log('opening');
 							}}
 						>
-							Show Instructions
+							Instructions
 						</Button>
 					</div>
 
