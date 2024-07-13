@@ -1,15 +1,16 @@
 {
   "files": {
-    "main.css": "/cloaked/static/css/main.aa7f4c8c.css",
-    "main.js": "/cloaked/static/js/main.5bc4c52e.js",
+    "main.css": "/cloaked/static/css/main.71890d02.css",
+    "main.js": "/cloaked/static/js/main.5660ca80.js",
     "static/js/787.8c18d6fd.chunk.js": "/cloaked/static/js/787.8c18d6fd.chunk.js",
+    "static/media/galaxy-night-view-scaled.png": "/cloaked/static/media/galaxy-night-view-scaled.be285aafcae80b871920.png",
     "index.html": "/cloaked/index.html",
-    "main.aa7f4c8c.css.map": "/cloaked/static/css/main.aa7f4c8c.css.map",
-    "main.5bc4c52e.js.map": "/cloaked/static/js/main.5bc4c52e.js.map",
+    "main.71890d02.css.map": "/cloaked/static/css/main.71890d02.css.map",
+    "main.5660ca80.js.map": "/cloaked/static/js/main.5660ca80.js.map",
     "787.8c18d6fd.chunk.js.map": "/cloaked/static/js/787.8c18d6fd.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.aa7f4c8c.css",
-    "static/js/main.5bc4c52e.js"
+    "static/css/main.71890d02.css",
+    "static/js/main.5660ca80.js"
   ]
 }
