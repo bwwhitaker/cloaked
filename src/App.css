@@ -4,11 +4,26 @@
 
 .App-header {
 	background-color: #0f1116;
-	min-height: 100vh;
+	background-image: url('./galaxy-night-view-scaled.png');
+	background-size: auto;
+	min-height: 101vh;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
 	font-size: calc(10px + 2vmin);
 	color: white;
+}
+
+.orientation-message {
+	display: flex;
+	background: #0f1116;
+	color: white;
+	min-width: 100vw;
+	min-height: 100vh;
+	text-align: center;
+	z-index: 1000;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
 }

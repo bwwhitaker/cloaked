@@ -99,45 +99,47 @@ function GameSpace() {
 				</div>
 				<h1>Welcome to Cloaked!</h1>
 				<p>Prepare to scan for cloaked enemy ships.</p>
-				<Grid container>
-					Grid Size:
-					<Slider
-						defaultValue={6}
-						aria-label='Grid Size'
-						valueLabelDisplay='auto'
-						step={1}
-						marks={axisMarks}
-						min={4}
-						max={8}
-						onChangeCommitted={changeAxis}
-					/>
-					Cloaked Ships:
-					<Slider
-						defaultValue={2}
-						aria-label='Cloaked Ships Count'
-						valueLabelDisplay='auto'
-						step={1}
-						marks={shipMarks}
-						min={1}
-						max={5}
-						onChangeCommitted={changeShips}
-					/>
-					Diagonal Mode:
-					<Button
-						variant='text'
-						color='primary'
-						onClick={() => {
-							setDiagonalMode(!diagonalMode);
-							if (diagonalModeStatus === 'Off') {
-								setDiagonalModeStatus('On');
-							} else {
-								setDiagonalModeStatus('Off');
-							}
-						}}
-					>
-						{diagonalModeStatus}
-					</Button>
-				</Grid>
+				<div className='grid-container'>
+					<Grid container>
+						Grid Size:
+						<Slider
+							defaultValue={6}
+							aria-label='Grid Size'
+							valueLabelDisplay='auto'
+							step={1}
+							marks={axisMarks}
+							min={4}
+							max={8}
+							onChangeCommitted={changeAxis}
+						/>
+						Cloaked Ships:
+						<Slider
+							defaultValue={2}
+							aria-label='Cloaked Ships Count'
+							valueLabelDisplay='auto'
+							step={1}
+							marks={shipMarks}
+							min={1}
+							max={5}
+							onChangeCommitted={changeShips}
+						/>
+						Diagonal Mode:
+						<Button
+							variant='text'
+							color='primary'
+							onClick={() => {
+								setDiagonalMode(!diagonalMode);
+								if (diagonalModeStatus === 'Off') {
+									setDiagonalModeStatus('On');
+								} else {
+									setDiagonalModeStatus('Off');
+								}
+							}}
+						>
+							{diagonalModeStatus}
+						</Button>
+					</Grid>
+				</div>
 				<div className='CenterAligning'>
 					<Button
 						variant='outlined'

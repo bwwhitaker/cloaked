@@ -23,6 +23,14 @@
 	justify-content: center;
 }
 
+.grid-container {
+	display: flex;
+	max-width: 85vw;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+
 .MuiSlider-markLabel {
 	color: #e0e3df !important;
 }
