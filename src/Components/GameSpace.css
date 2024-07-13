@@ -1,11 +1,26 @@
 .HeaderRow {
 	position: fixed;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	width: 100%;
 	padding: 10px;
 	margin-top: 10px;
-	margin-left: 20px;
 	margin-bottom: 20px;
 	top: 0;
 	left: 0;
+}
+
+.HeaderRow .left {
+	margin-left: 20px;
+	margin-right: auto;
+}
+
+.HeaderRow .right {
+	margin-right: 40px;
+	margin-left: auto;
+	font-size: medium;
+	color: #1976d2;
 }
 
 .GameSpaceVertical {

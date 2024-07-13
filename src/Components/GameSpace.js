@@ -19,6 +19,7 @@ function GameSpace() {
 	const [readyToPlay, setReadyToPlay] = useState(false);
 	const [axis, setAxis] = useState(6);
 	let maxValue = axis * axis;
+	const [succesfulScanCount, setSuccesfulScanCount] = useState(0);
 	const [ships, setShip] = useState(2);
 	const [fieldBg, setFieldBg] = useState('white');
 	const [shipLocations, setShipLocations] = useState([]);
@@ -87,15 +88,18 @@ function GameSpace() {
 		<div>
 			<div hidden={readyToPlay}>
 				<div className='HeaderRow'>
-					<Button
-						variant='text'
-						onClick={() => {
-							setOpenInstructions(true);
-							//console.log('opening');
-						}}
-					>
-						Instructions
-					</Button>
+					<span className='left'>
+						<Button
+							variant='text'
+							onClick={() => {
+								setOpenInstructions(true);
+								//console.log('opening');
+							}}
+						>
+							Instructions
+						</Button>
+					</span>
+					<span className='right'>Streak Count: {succesfulScanCount}</span>
 				</div>
 				<h1>Welcome to Cloaked!</h1>
 				<h3>Scanning Parameters:</h3>
@@ -159,30 +163,33 @@ function GameSpace() {
 			{readyToPlay && (
 				<div>
 					<div className='HeaderRow'>
-						<Button
-							sx={{
-								color: lightBlue[800],
-								'&.Mui-checked': {
-									color: lightBlue[600],
-								},
-							}}
-							onClick={() => {
-								setReadyToPlay(!readyToPlay);
-								setFieldBg('white');
-								setShipLocations([]);
-							}}
-						>
-							Reset Game
-						</Button>
-						<Button
-							variant='text'
-							onClick={() => {
-								setOpenInstructions(true);
-								//console.log('opening');
-							}}
-						>
-							Instructions
-						</Button>
+						<span className='left'>
+							<Button
+								sx={{
+									color: lightBlue[800],
+									'&.Mui-checked': {
+										color: lightBlue[600],
+									},
+								}}
+								onClick={() => {
+									setReadyToPlay(!readyToPlay);
+									setFieldBg('white');
+									setShipLocations([]);
+								}}
+							>
+								Reset Game
+							</Button>
+							<Button
+								variant='text'
+								onClick={() => {
+									setOpenInstructions(true);
+									//console.log('opening');
+								}}
+							>
+								Instructions
+							</Button>
+						</span>
+						<span className='right'>Streak Count: {succesfulScanCount}</span>
 					</div>
 
 					<SearchGrid
@@ -194,6 +201,8 @@ function GameSpace() {
 						setShipLocations={setShipLocations}
 						diagonalMode={diagonalMode}
 						diagonalModeStatus={diagonalModeStatus}
+						succesfulScanCount={succesfulScanCount}
+						setSuccesfulScanCount={setSuccesfulScanCount}
 					/>
 				</div>
 			)}

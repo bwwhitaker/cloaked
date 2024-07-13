@@ -64,6 +64,7 @@ function Square(props) {
 
 		if (isInArray(id, shipLocations) && clickMode === 'Scan' && isInArray(id, targeted)) {
 			updateColors('red', 'white', 250);
+			props.clearStreak();
 			props.removeTargeted(id);
 			setScanning(true);
 			setTimeout(() => {
@@ -71,6 +72,7 @@ function Square(props) {
 			}, 250);
 		} else if (isInArray(id, shipLocations) && clickMode === 'Scan') {
 			updateColors('red', 'white', 250);
+			props.clearStreak();
 			setTimeout(() => {
 				setScanDialogueOpen(true);
 			}, 250);
