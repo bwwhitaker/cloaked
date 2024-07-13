@@ -39,25 +39,29 @@ function InstructionModule(props) {
 					</Typography>
 					<Typography variant='h6'>4. Locking Targets:</Typography>
 					<Typography className='padded' variant='body2'>
-						Click the "Target" button to activate Targeting mode, then click a square. Targeted squares turn Green.
-						Targeting doesn't confirm a ship is there.
+						Click the "Target" button to activate Targeting mode, then click a square.
 					</Typography>
-					<Typography variant='h6'>5. Continuing Scans:</Typography>
+					<Typography className='padded' variant='body2'>
+						Targeted squares turn Green. Targeting doesn't confirm a ship is there.
+					</Typography>
+					<Typography variant='h6'>5. Unlocking Targets:</Typography>
+					<Typography className='padded' variant='body2'>
+						To unlock a target, click the "Unlock" button, then click the square.
+					</Typography>{' '}
+					<Typography className='padded' variant='body2'>
+						Return to Scanning mode by clicking the "Scan" button.
+					</Typography>
+					<Typography variant='h6'>6. Continuing Scans:</Typography>
 					<Typography className='padded' variant='body2'>
 						To resume scanning, click the "Scan" button to go back to Scanning mode.
 					</Typography>
-					<Typography variant='h6'>6. Firing Strategy:</Typography>
+					<Typography variant='h6'>7. Firing Strategy:</Typography>
 					<Typography className='padded' variant='body2'>
 						Don't 'Fire' until you've locked onto all the ships or you will lose.
 					</Typography>
-					<Typography variant='h6'>7. Accuracy Tip:</Typography>
+					<Typography variant='h6'>8. Accuracy Is Essential:</Typography>
 					<Typography className='padded' variant='body2'>
-						Avoid firing at too many targets. Accuracy drops, and you risk losing.
-					</Typography>
-					<Typography variant='h6'>8. Unlocking Targets:</Typography>
-					<Typography className='padded' variant='body2'>
-						To unlock a target, click the "Unlock" button, then click the square. Return to Scanning mode by clicking
-						the "Scan" button.
+						Don't 'Fire' at too many targets. The cloaked ships will be able to escape.
 					</Typography>
 				</DialogContent>
 
