@@ -13,7 +13,6 @@ function SearchGrid(props) {
 	const shipsToPass = props.shipLocations;
 	const diagonalMode = props.diagonalMode;
 	const diagonalModeStatus = props.diagonalModeStatus;
-	const succesfulScanCount = props.succesfulScanCount;
 	const [targeted, setTargeted] = useState([]);
 	const [scanBackground, setScanBackground] = useState('Blue');
 	const [targetBackground, setTargetBackground] = useState('');
@@ -35,7 +34,7 @@ function SearchGrid(props) {
 	};
 
 	const clearStreak = () => {
-		props.setSuccesfulScanCount(0);
+		props.resetSuccesfulScanCount();
 	};
 
 	const [snackbarMessage1, setSnackbarMessage1] = useState('');
@@ -76,7 +75,7 @@ function SearchGrid(props) {
 			setSnackbarMessage1('You found and destroyed all of the ships!');
 			setFireSnackbarColor('success');
 			setSnackbarTitle('You Win!');
-			props.setSuccesfulScanCount(succesfulScanCount + 1);
+			props.setSuccesfulScanCount();
 		} else {
 			let hiddenShips = shipsToPass
 				.sort(function (a, b) {
@@ -94,7 +93,7 @@ function SearchGrid(props) {
 				setSnackbarMessage1(`Your scans were not accurate. They fired back and destroyed your ship.`);
 				setSnackbarMessage2(`Ships were in cells: ${hiddenShips}.`);
 			}
-			props.setSuccesfulScanCount(0);
+			clearStreak();
 		}
 	}
 

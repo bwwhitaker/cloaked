@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Slider from '@mui/material/Slider';
 import { Grid, Button } from '@mui/material';
 import SearchGrid from './SearchGrid';
@@ -84,6 +84,35 @@ function GameSpace() {
 		setShipLocations(newShipLocations);
 	};
 
+	useEffect(() => {
+		// Retrieve the streak count from local storage or initialize it if not present
+		const storedCount = localStorage.getItem('succesfulScanCount');
+		if (storedCount !== null) {
+			console.log('Retrieved from local storage:', storedCount);
+			setSuccesfulScanCount(parseInt(storedCount, 10));
+		}
+	}, []);
+
+	useEffect(() => {
+		// Update local storage whenever succesfulScanCount changes
+		const timer = setTimeout(() => {
+			if (succesfulScanCount !== null && succesfulScanCount >= 0) {
+				console.log('Updating local storage to:', succesfulScanCount);
+				localStorage.setItem('succesfulScanCount', succesfulScanCount);
+			}
+		}, 100);
+
+		return () => clearTimeout(timer);
+	}, [succesfulScanCount]);
+
+	const incrementCount = () => {
+		setSuccesfulScanCount((prevCount) => prevCount + 1);
+	};
+
+	const resetCount = () => {
+		setSuccesfulScanCount(0);
+	};
+
 	return (
 		<div>
 			<div hidden={readyToPlay}>
@@ -93,7 +122,6 @@ function GameSpace() {
 							variant='text'
 							onClick={() => {
 								setOpenInstructions(true);
-								//console.log('opening');
 							}}
 						>
 							Instructions
@@ -134,11 +162,7 @@ function GameSpace() {
 								color='primary'
 								onClick={() => {
 									setDiagonalMode(!diagonalMode);
-									if (diagonalModeStatus === 'Off') {
-										setDiagonalModeStatus('On');
-									} else {
-										setDiagonalModeStatus('Off');
-									}
+									setDiagonalModeStatus(diagonalModeStatus === 'Off' ? 'On' : 'Off');
 								}}
 							>
 								{diagonalModeStatus}
@@ -183,7 +207,6 @@ function GameSpace() {
 								variant='text'
 								onClick={() => {
 									setOpenInstructions(true);
-									//console.log('opening');
 								}}
 							>
 								Instructions
@@ -202,7 +225,8 @@ function GameSpace() {
 						diagonalMode={diagonalMode}
 						diagonalModeStatus={diagonalModeStatus}
 						succesfulScanCount={succesfulScanCount}
-						setSuccesfulScanCount={setSuccesfulScanCount}
+						setSuccesfulScanCount={incrementCount}
+						resetSuccesfulScanCount={resetCount}
 					/>
 				</div>
 			)}
