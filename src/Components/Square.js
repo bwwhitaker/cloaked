@@ -7,6 +7,8 @@ function Square(props) {
 	const [currentBackgroundColor, setCurrentBackgroundColor] = useState(props.bg);
 	const shipLocations = props.shipLocations;
 	const [snackbarMessageClick, setSnackbarMessageClick] = useState('');
+	const [snackbarSeverity, setSnackbarSeverity] = useState('error');
+	const [snackbarTitle, setSnackbarTitle] = useState('Game Over!');
 	const hiddenShips = shipLocations
 		.sort(function (a, b) {
 			return a - b;
@@ -52,21 +54,35 @@ function Square(props) {
 		let f = id - axis + 1;
 		let g = id + axis - 1;
 		let h = id + axis + 1;
-		if (clickMode !== 'Target') {
+		if (clickMode === 'Scan') {
 			showScanning();
+			props.incrementScanCount();
 		}
 
 		if (shipLocations.length === 1) {
-			setSnackbarMessageClick('Your scans alerted the enemy and they fired first. The ship was in cell:');
+			setSnackbarMessageClick(
+				`Your scans alerted the enemy and they fired first. The ship was in cell: ${hiddenShips}`
+			);
 		} else {
-			setSnackbarMessageClick('Your scans alerted the enemy and they fired first. Ships were in cells:');
+			setSnackbarMessageClick(`Your scans alerted the enemy and they fired first. Ships were in cells: ${hiddenShips}`);
 		}
 
 		if (isInArray(id, shipLocations) && clickMode === 'Scan' && isInArray(id, targeted)) {
+			console.log('first click');
 			updateColors('red', 'white', 250);
 			props.clearStreak();
 			props.removeTargeted(id);
 			setScanning(true);
+			setTimeout(() => {
+				setScanDialogueOpen(true);
+			}, 250);
+		} else if (isInArray(id, shipLocations) && clickMode === 'Scan' && props.scanCount < 1) {
+			setSnackbarTitle('That was lucky!');
+			setSnackbarSeverity('info');
+			setSnackbarMessageClick(
+				`Your first scan found a ship. Since they got startled and fled, we won't reset your streak to 0.`
+			);
+			updateColors('red', 'white', 250);
 			setTimeout(() => {
 				setScanDialogueOpen(true);
 			}, 250);
@@ -87,6 +103,7 @@ function Square(props) {
 			props.removeTargeted(id);
 		} else if (clickMode === 'Unlock') {
 			updateColors('white', 'black', 250);
+			props.setClickCount();
 		} else if (isInArray(a, shipLocations) && id % axis !== 1) {
 			updateColors('blue', 'white', 250);
 		} else if (isInArray(b, shipLocations) && id % axis !== 0) {
@@ -138,11 +155,9 @@ function Square(props) {
 			</PaperPlace>
 
 			<Snackbar open={scanDialogueOpen} onClose={handleClose} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
-				<Alert variant='filled' severity='error' onClose={handleClose}>
-					<AlertTitle>Game Over!</AlertTitle>
-					<div>
-						{snackbarMessageClick} {hiddenShips}
-					</div>
+				<Alert variant='filled' severity={snackbarSeverity} onClose={handleClose}>
+					<AlertTitle>{snackbarTitle}</AlertTitle>
+					<div>{snackbarMessageClick}</div>
 					<Button color='inherit' variant='outlined' onClick={handleClose} autoFocus>
 						Reset Game
 					</Button>

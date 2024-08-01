@@ -18,6 +18,8 @@ function SearchGrid(props) {
 	const [targetBackground, setTargetBackground] = useState('');
 	const [unlockBackground, setUnlockBackground] = useState('');
 	const [unlockFontColor, setUnlockFontColor] = useState('White');
+	const [scanCount, setScanCount] = useState(0);
+
 	const updateTargeted = (id) => {
 		setTargeted((prevTargeted) => [...prevTargeted, id]);
 	};
@@ -35,6 +37,14 @@ function SearchGrid(props) {
 
 	const clearStreak = () => {
 		props.resetSuccesfulScanCount();
+	};
+
+	const incrementScanCount = () => {
+		setScanCount((prevCount) => prevCount + 1);
+	};
+
+	const resetScanCount = () => {
+		setScanCount(0);
 	};
 
 	const [snackbarMessage1, setSnackbarMessage1] = useState('');
@@ -66,7 +76,7 @@ function SearchGrid(props) {
 		message = `There are ${ships} cloaked ships!`;
 	}
 
-	//console.log(shipsToPass);
+	// console.log(shipsToPass);
 	// console.log(targeted);
 
 	function Fire() {
@@ -76,6 +86,7 @@ function SearchGrid(props) {
 			setFireSnackbarColor('success');
 			setSnackbarTitle('You Win!');
 			props.setSuccesfulScanCount();
+			resetScanCount();
 		} else {
 			let hiddenShips = shipsToPass
 				.sort(function (a, b) {
@@ -94,6 +105,7 @@ function SearchGrid(props) {
 				setSnackbarMessage2(`Ships were in cells: ${hiddenShips}.`);
 			}
 			clearStreak();
+			resetScanCount();
 		}
 	}
 
@@ -182,6 +194,9 @@ function SearchGrid(props) {
 									handleScanCloakedShip={handleScanCloakedShip}
 									diagonalMode={diagonalMode}
 									clearStreak={clearStreak}
+									scanCount={scanCount}
+									incrementScanCount={incrementScanCount}
+									resetScanCount={resetScanCount}
 								/>
 							</Grid>
 						))}

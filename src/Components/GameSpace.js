@@ -105,11 +105,11 @@ function GameSpace() {
 		return () => clearTimeout(timer);
 	}, [succesfulScanCount]);
 
-	const incrementCount = () => {
+	const incrementStreakCount = () => {
 		setSuccesfulScanCount((prevCount) => prevCount + 1);
 	};
 
-	const resetCount = () => {
+	const resetStreakCount = () => {
 		setSuccesfulScanCount(0);
 	};
 
@@ -225,8 +225,8 @@ function GameSpace() {
 						diagonalMode={diagonalMode}
 						diagonalModeStatus={diagonalModeStatus}
 						succesfulScanCount={succesfulScanCount}
-						setSuccesfulScanCount={incrementCount}
-						resetSuccesfulScanCount={resetCount}
+						setSuccesfulScanCount={incrementStreakCount}
+						resetSuccesfulScanCount={resetStreakCount}
 					/>
 				</div>
 			)}
