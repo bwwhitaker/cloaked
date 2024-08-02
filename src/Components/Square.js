@@ -81,7 +81,7 @@ function Square(props) {
 			setSnackbarTitle('That was lucky!');
 			setSnackbarSeverity('info');
 			setSnackbarMessageClick(
-				`Your first scan found a ship. Since they got startled and fled, we won't reset your streak to 0.`
+				`Your first scan found a ship. Since they got startled and fled, we won't reset your streak.`
 			);
 			updateColors('red', 'white', 250);
 			setTimeout(() => {
