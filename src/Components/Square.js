@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Paper, Button, Snackbar, Alert, AlertTitle } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import Scanning from './Scanning';
+import './GameSpace.css';
 
 function Square(props) {
 	const [currentBackgroundColor, setCurrentBackgroundColor] = useState(props.bg);
@@ -158,9 +159,11 @@ function Square(props) {
 				<Alert variant='filled' severity={snackbarSeverity} onClose={handleClose}>
 					<AlertTitle>{snackbarTitle}</AlertTitle>
 					<div>{snackbarMessageClick}</div>
-					<Button color='inherit' variant='outlined' onClick={handleClose} autoFocus>
-						Reset Game
-					</Button>
+					<div className='top-padding'>
+						<Button color='inherit' variant='outlined' onClick={handleClose} autoFocus>
+							Reset Game
+						</Button>
+					</div>
 				</Alert>
 			</Snackbar>
 		</div>

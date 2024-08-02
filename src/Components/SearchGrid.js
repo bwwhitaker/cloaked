@@ -221,9 +221,11 @@ function SearchGrid(props) {
 					<AlertTitle>{snackbarTitle}</AlertTitle>
 					<div>{snackbarMessage1}</div>
 					<div>{snackbarMessage2}</div>
-					<Button color='inherit' variant='outlined' onClick={handleClose} autoFocus>
-						Reset Game
-					</Button>
+					<div className='top-padding'>
+						<Button color='inherit' variant='outlined' onClick={handleClose} autoFocus>
+							Reset Game
+						</Button>
+					</div>
 				</Alert>
 			</Snackbar>
 		</div>
