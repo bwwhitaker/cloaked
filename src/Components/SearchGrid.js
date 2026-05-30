@@ -5,6 +5,7 @@ import { styled } from '@mui/material/styles';
 import { CELL } from './CellStatus';
 import './GameSpace.css';
 import { CELL_SIZE, REVEAL_DELAY } from './Constants';
+import { isAdjacentToShip, isWin, isLuckyFirstScan } from './GameLogic';
 
 const ModeButton = styled(Button)({
 	textAlign: 'center',
@@ -83,28 +84,6 @@ function SearchGrid(props) {
 			? `Your scans alerted the enemy and they fired first. The ship was in cell: ${shipCells()}`
 			: `Your scans alerted the enemy and they fired first. Ships were in cells: ${shipCells()}`;
 
-	const isAdjacentToShip = (id) => {
-		const a = id - 1;
-		const b = id + 1;
-		const c = id - axisX;
-		const d = id + axisX;
-		const e = id - axisX - 1;
-		const f = id - axisX + 1;
-		const g = id + axisX - 1;
-		const h = id + axisX + 1;
-
-		if (isInArray(a, shipsToPass) && id % axisX !== 1) return true; // left
-		if (isInArray(b, shipsToPass) && id % axisX !== 0) return true; // right
-		if (isInArray(c, shipsToPass)) return true; // up
-		if (isInArray(d, shipsToPass)) return true; // down
-		if (!diagonalMode) return false;
-		if (isInArray(e, shipsToPass) && e % axisX !== 0) return true; // up-left
-		if (isInArray(f, shipsToPass) && f % axisX !== 1) return true; // up-right
-		if (isInArray(g, shipsToPass) && g % axisX !== 0) return true; // down-left
-		if (isInArray(h, shipsToPass) && h % axisX !== 1) return true; // down-right
-		return false;
-	};
-
 	const handleSquareClick = (id) => {
 		const mode = clickMode;
 
@@ -118,7 +97,7 @@ function SearchGrid(props) {
 		if (onShip && mode === 'Scan') {
 			setStatus(id, CELL.SHIP, REVEAL_DELAY);
 			// "lucky" only on a first scan that wasn't already a targeted cell
-			const lucky = scanCount < 1 && !isInArray(id, targeted);
+			const lucky = isLuckyFirstScan(scanCount, id, targeted);
 			if (isInArray(id, targeted)) removeTargeted(id);
 			if (!lucky) clearStreak();
 			setTimeout(() => {
@@ -142,7 +121,7 @@ function SearchGrid(props) {
 		} else if (mode === 'Scan' && isInArray(id, targeted)) {
 			setStatus(id, CELL.CLEAR, REVEAL_DELAY);
 			removeTargeted(id);
-		} else if (isAdjacentToShip(id)) {
+		} else if (isAdjacentToShip(id, shipsToPass, axisX, diagonalMode)) {
 			setStatus(id, CELL.ADJACENT, REVEAL_DELAY);
 		} else {
 			setStatus(id, CELL.CLEAR, REVEAL_DELAY);
@@ -157,8 +136,7 @@ function SearchGrid(props) {
 	const message = ships === 1 ? 'There is 1 cloaked ship!' : `There are ${ships} cloaked ships!`;
 
 	function Fire() {
-		const sortNums = (arr) => [...new Set(arr)].sort((a, b) => a - b);
-		if (JSON.stringify(sortNums(shipsToPass)) === JSON.stringify(sortNums(targeted))) {
+		if (isWin(shipsToPass, targeted)) {
 			setFireSnackbarOpen(true);
 			setSnackbarMessage1('You found and destroyed all of the ships!');
 			setSnackbarMessage2('');

@@ -4,12 +4,17 @@ import React from 'react';
 import { useEffect, useState } from 'react';
 
 function App() {
-	const [orientation, setOrientation] = useState(window.screen.orientation.type);
+	// `window.screen.orientation` is unavailable in some browsers (and in the
+	// jsdom test environment), so read it defensively and default to an empty
+	// string — `orientation.includes(...)` below stays safe either way.
+	const [orientation, setOrientation] = useState(window.screen?.orientation?.type ?? '');
 	const [isMobile, setIsMobile] = useState(false);
 
 	useEffect(() => {
+		const screenOrientation = window.screen?.orientation;
+
 		const handleOrientationChange = () => {
-			setOrientation(window.screen.orientation.type);
+			setOrientation(screenOrientation?.type ?? '');
 		};
 
 		const checkIfMobile = () => {
@@ -21,11 +26,11 @@ function App() {
 			}
 		};
 
-		window.screen.orientation.addEventListener('change', handleOrientationChange);
 		checkIfMobile();
+		screenOrientation?.addEventListener('change', handleOrientationChange);
 
 		return () => {
-			window.screen.orientation.removeEventListener('change', handleOrientationChange);
+			screenOrientation?.removeEventListener('change', handleOrientationChange);
 		};
 	}, []);
 

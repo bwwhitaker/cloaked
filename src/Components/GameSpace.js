@@ -5,17 +5,9 @@ import SearchGrid from './SearchGrid';
 import InstructionModule from './InstructionModule';
 import './GameSpace.css';
 import { lightBlue } from '@mui/material/colors';
+import { generateUniqueRandomNumbers } from './GameLogic';
 
 function GameSpace() {
-	const generateUniqueRandomNumbers = (count, maxValue, existingArray) => {
-		const randomNumbers = new Set(existingArray);
-		while (randomNumbers.size < count) {
-			const randomNumber = Math.floor(Math.random() * maxValue) + 1;
-			randomNumbers.add(randomNumber);
-		}
-		return Array.from(randomNumbers);
-	};
-
 	const [readyToPlay, setReadyToPlay] = useState(false);
 	const [axis, setAxis] = useState(6);
 	let maxValue = axis * axis;
