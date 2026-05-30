@@ -1,4 +1,4 @@
-import { isAdjacentToShip, isWin, isLuckyFirstScan, generateUniqueRandomNumbers } from './gameLogic';
+import { isAdjacentToShip, isWin, isLuckyFirstScan, generateUniqueRandomNumbers } from './GameLogic';
 
 // A deterministic stand-in for Math.random: returns the supplied values in
 // order, then repeats the last one. Lets us pin down "random" placement.
