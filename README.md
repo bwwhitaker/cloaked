@@ -34,9 +34,10 @@ Your win streak is saved between sessions in `localStorage`.
 
 ## Tech stack
 
-- **React 18** (Create React App)
+- **React 18**
+- **Vite** for dev server and bundling
+- **Vitest** + **React Testing Library** for tests
 - **MUI (Material UI) 5** with Emotion for styling
-- **Jest** + **React Testing Library** for tests
 - **GitHub Pages** for hosting (via `gh-pages`)
 
 ## Run locally
@@ -45,15 +46,16 @@ Your win streak is saved between sessions in `localStorage`.
 git clone https://github.com/bwwhitaker/cloaked.git
 cd cloaked
 npm install
-npm start          # http://localhost:3000
+npm run dev        # http://localhost:3000
 ```
 
 Other scripts:
 
 ```bash
-npm test           # run the test suite in watch mode
-CI=true npm test   # run once (useful in CI)
-npm run build      # production build
+npm test           # run tests in watch mode (Vitest)
+npm run test:run   # run the suite once (useful in CI)
+npm run build      # production build into ./build
+npm run preview    # serve the production build locally
 npm run deploy     # build + publish to GitHub Pages
 ```
 
@@ -66,32 +68,42 @@ The game rules live in a small, framework-free module — `src/Components/gameLo
 - **Ship placement** (`generateUniqueRandomNumbers`): correct count, uniqueness, range, and preservation of existing placements (with an injectable RNG for deterministic tests).
 - **Lucky first scan** (`isLuckyFirstScan`).
 
+`src/App.test.jsx` is a render smoke test for the app shell.
+
 ## Project structure
 
 ```
+index.html                      # Vite entry (loads /src/index.jsx)
+vite.config.js                  # Vite + Vitest config (base path, test env)
 src/
-├── App.js                      # shell + mobile orientation handling
+├── index.jsx                   # React root
+├── App.jsx                     # shell + mobile orientation handling
 ├── Components/
-│   ├── GameSpace.js            # setup screen, board state, streak persistence
-│   ├── SearchGrid.js           # the grid, scan/target/unlock modes, win/lose flow
-│   ├── Square.js               # a single cell
-│   ├── Scanning.js             # scan animation
-│   ├── InstructionModule.js    # how-to-play dialog
+│   ├── GameSpace.jsx           # setup screen, board state, streak persistence
+│   ├── SearchGrid.jsx          # the grid, scan/target/unlock modes, win/lose flow
+│   ├── Square.jsx              # a single cell
+│   ├── Scanning.jsx            # scan animation
+│   ├── InstructionModule.jsx   # how-to-play dialog
 │   ├── CellStatus.js           # cell status enum + status→style mapping
 │   ├── Constants.js            # shared sizing/timing constants
-│   └── gameLogic.js            # pure game rules (unit-tested)
+│   ├── gameLogic.js            # pure game rules (unit-tested)
+│   └── gameLogic.test.js       # game-logic tests
 └── ...
 ```
+
+Components that contain JSX use the `.jsx` extension; plain logic modules stay `.js`.
 
 ## Design notes
 
 The interesting part of this game is the adjacency math. Cells are numbered `1..(axis²)` left-to-right, top-to-bottom, so a cell's horizontal neighbors are `id ± 1` — but that naively wraps a left-edge cell onto the end of the previous row. The logic guards those cases with the column identities `id % axis === 1` (left edge) and `id % axis === 0` (right edge). Pulling this into a pure module made those edge cases straightforward to lock down with tests instead of catching them by hand in the browser.
 
+The project was migrated from Create React App (now deprecated) to Vite, which removed the entire vulnerable webpack/CRA build chain and dropped `npm audit` to zero.
+
 ## Roadmap
 
 - Show a numeric count of adjacent ships per cell (a closer nod to classic Minesweeper)
 - Keyboard navigation and ARIA roles for full accessibility
-- CI workflow to run lint + tests on every push
+- CI workflow to run tests on every push
 - Sound and richer win/lose animations
 
 ## License
