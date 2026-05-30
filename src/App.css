@@ -3,8 +3,9 @@
 }
 
 .App-header {
-	background-image: url('./galaxy-night-view.webp');
+	background-image: url('./galaxy-night-view-1.webp');
 	background-size: auto;
+	background-position: center 20%;
 	min-height: 101vh;
 	display: flex;
 	flex-direction: column;
