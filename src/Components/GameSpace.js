@@ -88,7 +88,7 @@ function GameSpace() {
 		// Retrieve the streak count from local storage or initialize it if not present
 		const storedCount = localStorage.getItem('successfulScanCount');
 		if (storedCount !== null) {
-			console.log('Retrieved from local storage:', storedCount);
+			/* console.log('Retrieved from local storage:', storedCount); */
 			setsuccessfulScanCount(parseInt(storedCount, 10));
 		}
 	}, []);
@@ -97,7 +97,7 @@ function GameSpace() {
 		// Update local storage whenever successfulScanCount changes
 		const timer = setTimeout(() => {
 			if (successfulScanCount !== null && successfulScanCount >= 0) {
-				console.log('Updating local storage to:', successfulScanCount);
+				/* console.log('Updating local storage to:', successfulScanCount); */
 				localStorage.setItem('successfulScanCount', successfulScanCount);
 			}
 		}, 100);
@@ -235,7 +235,5 @@ function GameSpace() {
 		</div>
 	);
 }
-
-Grid.propTypes = {};
 
 export default GameSpace;
