@@ -19,9 +19,9 @@ function GameSpace() {
 	const [readyToPlay, setReadyToPlay] = useState(false);
 	const [axis, setAxis] = useState(6);
 	let maxValue = axis * axis;
-	const [succesfulScanCount, setSuccesfulScanCount] = useState(0);
+	const [successfulScanCount, setsuccessfulScanCount] = useState(0);
 	const [ships, setShip] = useState(2);
-	const [fieldBg, setFieldBg] = useState('white');
+	const [fieldBg, setFieldBg] = useState('rgba(255,255,255,.1)');
 	const [shipLocations, setShipLocations] = useState([]);
 	const [openInstructions, setOpenInstructions] = useState(false);
 	const [diagonalMode, setDiagonalMode] = useState(false);
@@ -86,31 +86,31 @@ function GameSpace() {
 
 	useEffect(() => {
 		// Retrieve the streak count from local storage or initialize it if not present
-		const storedCount = localStorage.getItem('succesfulScanCount');
+		const storedCount = localStorage.getItem('successfulScanCount');
 		if (storedCount !== null) {
 			console.log('Retrieved from local storage:', storedCount);
-			setSuccesfulScanCount(parseInt(storedCount, 10));
+			setsuccessfulScanCount(parseInt(storedCount, 10));
 		}
 	}, []);
 
 	useEffect(() => {
-		// Update local storage whenever succesfulScanCount changes
+		// Update local storage whenever successfulScanCount changes
 		const timer = setTimeout(() => {
-			if (succesfulScanCount !== null && succesfulScanCount >= 0) {
-				console.log('Updating local storage to:', succesfulScanCount);
-				localStorage.setItem('succesfulScanCount', succesfulScanCount);
+			if (successfulScanCount !== null && successfulScanCount >= 0) {
+				console.log('Updating local storage to:', successfulScanCount);
+				localStorage.setItem('successfulScanCount', successfulScanCount);
 			}
 		}, 100);
 
 		return () => clearTimeout(timer);
-	}, [succesfulScanCount]);
+	}, [successfulScanCount]);
 
 	const incrementStreakCount = () => {
-		setSuccesfulScanCount((prevCount) => prevCount + 1);
+		setsuccessfulScanCount((prevCount) => prevCount + 1);
 	};
 
 	const resetStreakCount = () => {
-		setSuccesfulScanCount(0);
+		setsuccessfulScanCount(0);
 	};
 
 	return (
@@ -127,7 +127,7 @@ function GameSpace() {
 							Instructions
 						</Button>
 					</span>
-					<span className='right'>Streak Count: {succesfulScanCount}</span>
+					<span className='right'>Streak Count: {successfulScanCount}</span>
 				</div>
 				<h1>Welcome to Cloaked!</h1>
 				<h3>Scanning Parameters:</h3>
@@ -212,7 +212,7 @@ function GameSpace() {
 								Instructions
 							</Button>
 						</span>
-						<span className='right'>Streak Count: {succesfulScanCount}</span>
+						<span className='right'>Streak Count: {successfulScanCount}</span>
 					</div>
 
 					<SearchGrid
@@ -224,9 +224,9 @@ function GameSpace() {
 						setShipLocations={setShipLocations}
 						diagonalMode={diagonalMode}
 						diagonalModeStatus={diagonalModeStatus}
-						succesfulScanCount={succesfulScanCount}
-						setSuccesfulScanCount={incrementStreakCount}
-						resetSuccesfulScanCount={resetStreakCount}
+						successfulScanCount={successfulScanCount}
+						setsuccessfulScanCount={incrementStreakCount}
+						resetsuccessfulScanCount={resetStreakCount}
 					/>
 				</div>
 			)}

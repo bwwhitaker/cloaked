@@ -24,7 +24,7 @@ function Square(props) {
 		setScanDialogueOpen(!scanDialogueOpen);
 		props.handleScanCloakedShip();
 	};
-	const [currentFontColor, setCurrentFontColor] = useState('black');
+	const [currentFontColor, setCurrentFontColor] = useState('white');
 
 	const isInArray = (value, array) => {
 		return array.includes(value);
@@ -70,7 +70,7 @@ function Square(props) {
 
 		if (isInArray(id, shipLocations) && clickMode === 'Scan' && isInArray(id, targeted)) {
 			console.log('first click');
-			updateColors('red', 'white', 250);
+			updateColors('#d32f2f', 'white', 250);
 			props.clearStreak();
 			props.removeTargeted(id);
 			setScanning(true);
@@ -83,12 +83,12 @@ function Square(props) {
 			setSnackbarMessageClick(
 				`Your first scan found a ship. Since they got startled and fled, we won't reset your streak.`
 			);
-			updateColors('red', 'white', 250);
+			updateColors('#d32f2f', 'white', 250);
 			setTimeout(() => {
 				setScanDialogueOpen(true);
 			}, 250);
 		} else if (isInArray(id, shipLocations) && clickMode === 'Scan') {
-			updateColors('red', 'white', 250);
+			updateColors('#d32f2f', 'white', 250);
 			props.clearStreak();
 			setTimeout(() => {
 				setScanDialogueOpen(true);
@@ -106,21 +106,21 @@ function Square(props) {
 			updateColors('white', 'black', 250);
 			props.setClickCount();
 		} else if (isInArray(a, shipLocations) && id % axis !== 1) {
-			updateColors('blue', 'white', 250);
+			updateColors('#1976d2', 'white', 250);
 		} else if (isInArray(b, shipLocations) && id % axis !== 0) {
-			updateColors('blue', 'white', 250);
+			updateColors('#1976d2', 'white', 250);
 		} else if (isInArray(c, shipLocations)) {
-			updateColors('blue', 'white', 250);
+			updateColors('#1976d2', 'white', 250);
 		} else if (isInArray(d, shipLocations)) {
-			updateColors('blue', 'white', 250);
+			updateColors('#1976d2', 'white', 250);
 		} else if (isInArray(e, shipLocations) && e % axis !== 0 && diagonalMode === true) {
-			updateColors('blue', 'white', 250);
+			updateColors('#1976d2', 'white', 250);
 		} else if (isInArray(f, shipLocations) && f % axis !== 1 && diagonalMode === true) {
-			updateColors('blue', 'white', 250);
+			updateColors('#1976d2', 'white', 250);
 		} else if (isInArray(g, shipLocations) && g % axis !== 0 && diagonalMode === true) {
-			updateColors('blue', 'white', 250);
+			updateColors('#1976d2', 'white', 250);
 		} else if (isInArray(h, shipLocations) && h % axis !== 1 && diagonalMode === true) {
-			updateColors('blue', 'white', 250);
+			updateColors('#1976d2', 'white', 250);
 		} else {
 			updateColors('black', 'white', 250);
 		}
@@ -134,6 +134,7 @@ function Square(props) {
 		lineHeight: '50px',
 		backgroundColor: currentBackgroundColor,
 		justifyContent: 'center',
+		borderColor: 'white',
 		transition: 'background-color 0.3s ease',
 		'&:hover': {
 			cursor: 'pointer',

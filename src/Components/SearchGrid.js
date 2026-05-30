@@ -14,7 +14,7 @@ function SearchGrid(props) {
 	const diagonalMode = props.diagonalMode;
 	const diagonalModeStatus = props.diagonalModeStatus;
 	const [targeted, setTargeted] = useState([]);
-	const [scanBackground, setScanBackground] = useState('Blue');
+	const [scanBackground, setScanBackground] = useState('#1976d2');
 	const [targetBackground, setTargetBackground] = useState('');
 	const [unlockBackground, setUnlockBackground] = useState('');
 	const [unlockFontColor, setUnlockFontColor] = useState('White');
@@ -36,7 +36,7 @@ function SearchGrid(props) {
 	};
 
 	const clearStreak = () => {
-		props.resetSuccesfulScanCount();
+		props.resetsuccessfulScanCount();
 	};
 
 	const incrementScanCount = () => {
@@ -85,7 +85,7 @@ function SearchGrid(props) {
 			setSnackbarMessage1('You found and destroyed all of the ships!');
 			setFireSnackbarColor('success');
 			setSnackbarTitle('You Win!');
-			props.setSuccesfulScanCount();
+			props.setsuccessfulScanCount();
 			resetScanCount();
 		} else {
 			let hiddenShips = shipsToPass
@@ -112,6 +112,7 @@ function SearchGrid(props) {
 	const ScanButton = styled(Button)(() => ({
 		textAlign: 'center',
 		backgroundColor: scanBackground,
+		outlineColor: scanBackground,
 		color: 'White',
 		justifyContent: 'center',
 		marginLeft: '10px',
@@ -120,6 +121,7 @@ function SearchGrid(props) {
 	const TargetButton = styled(Button)(() => ({
 		textAlign: 'center',
 		backgroundColor: targetBackground,
+		borderColor: '#2e7d32',
 		color: 'White',
 		justifyContent: 'center',
 		marginLeft: '10px',

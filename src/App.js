@@ -28,6 +28,7 @@ function App() {
 			window.screen.orientation.removeEventListener('change', handleOrientationChange);
 		};
 	}, []);
+
 	return (
 		<div className='App'>
 			{isMobile && orientation.includes('landscape') && (
