@@ -68,6 +68,13 @@ describe('isAdjacentToShip', () => {
 		// Cell 12 (right edge). Its up-right (id-5=7, left edge of row 1) wraps.
 		expect(isAdjacentToShip(12, [7], axis, true)).toBe(false);
 	});
+
+	test('diagonal mode still respects diagonal horizontal edges', () => {
+		// Cell 12 (right edge). It's down-right, left edge of row 3 wraps.
+		expect(isAdjacentToShip(12, [13], axis, true)).toBe(false);
+		// Cell 13 (left edge). It's up-right, right edge of row 2 wraps.
+		expect(isAdjacentToShip(13, [12], axis, true)).toBe(false);
+	});
 });
 
 describe('isWin', () => {
