@@ -61,7 +61,7 @@ npm run deploy     # build + publish to GitHub Pages
 
 ## Tests
 
-The game rules live in a small, framework-free module — `src/Components/gameLogic.js` — so they can be tested without rendering any UI. `src/Components/gameLogic.test.js` covers:
+The game rules live in a small, framework-free module — `src/Components/GameLogic.js` — so they can be tested without rendering any UI. `src/Components/GameLogic.test.js` covers:
 
 - **Adjacency** (`isAdjacentToShip`): orthogonal and diagonal neighbors, plus the board-edge cases where a naive `id ± 1` would wrap onto the wrong row.
 - **Win detection** (`isWin`): order-independent matching, duplicate targets, near-misses.
@@ -86,8 +86,8 @@ src/
 │   ├── InstructionModule.jsx   # how-to-play dialog
 │   ├── CellStatus.js           # cell status enum + status→style mapping
 │   ├── Constants.js            # shared sizing/timing constants
-│   ├── gameLogic.js            # pure game rules (unit-tested)
-│   └── gameLogic.test.js       # game-logic tests
+│   ├── GameLogic.js            # pure game rules (unit-tested)
+│   └── GameLogic.test.js       # game-logic tests
 └── ...
 ```
 
@@ -103,7 +103,6 @@ The project was migrated from Create React App (now deprecated) to Vite, which r
 
 - Show a numeric count of adjacent ships per cell (a closer nod to classic Minesweeper)
 - Keyboard navigation and ARIA roles for full accessibility
-- CI workflow to run tests on every push
 - Sound and richer win/lose animations
 
 ## License
