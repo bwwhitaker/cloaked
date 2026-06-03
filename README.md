@@ -4,11 +4,7 @@ A minesweeper-inspired browser game: hunt down enemy ships hiding behind a cloak
 
 **▶ Play it:** https://bwwhitaker.github.io/cloaked
 
-<!-- If the GitHub Pages deploy isn't live yet, run `npm run deploy` (configured below) or remove this line. -->
-
-<!-- TODO: add a short gameplay GIF or screenshot here — it's the single most valuable thing on this page.
-     Drop the file in /docs (e.g. docs/gameplay.gif) and uncomment: -->
-<!-- ![Cloaked gameplay](docs/gameplay.gif) -->
+[Cloaked gameplay](docs/gameplay.gif)
 
 ## How to play
 
