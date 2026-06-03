@@ -4,7 +4,7 @@ A minesweeper-inspired browser game: hunt down enemy ships hiding behind a cloak
 
 **▶ Play it:** https://bwwhitaker.github.io/cloaked
 
-[Cloaked gameplay](docs/gameplay.gif)
+![Cloaked gameplay](docs/gameplay.gif)
 
 ## How to play
 
