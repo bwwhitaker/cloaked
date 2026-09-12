@@ -1,0 +1,305 @@
+import { render, screen, within, act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import SearchGrid from './SearchGrid';
+import { REVEAL_DELAY } from './Constants';
+
+// SearchGrid was the largest untested file in the project. These tests cover
+// the wiring rather than the rules: the rules already have unit tests in
+// GameLogic.test.js, and re-asserting adjacency maths through a rendered DOM
+// would be slower, more brittle, and no more convincing.
+//
+// What is actually worth asserting here is everything the pure module cannot
+// see — that the right mode routes to the right handler, that scheduled
+// reveals land, that the streak callbacks fire on the right outcomes, and that
+// a reset clears the board state upward.
+//
+// Board used throughout (axis 4, ids 1..16):
+//    1  2  3  4
+//    5  6  7  8
+//    9 10 11 12
+//   13 14 15 16
+// Ship on 6. Cell 2 is adjacent (directly above), cell 16 is not.
+
+const SHIPS = [6];
+
+function setup(overrides = {}) {
+	const props = {
+		axis: 4,
+		ships: 1,
+		fieldBg: 'black',
+		shipLocations: SHIPS,
+		diagonalMode: false,
+		diagonalModeStatus: 'off',
+		resetSuccessfulStreakCount: vi.fn(),
+		setSuccessfulStreakCount: vi.fn(),
+		setReadyToPlay: vi.fn(),
+		setShipLocations: vi.fn(),
+		...overrides,
+	};
+
+	const user = userEvent.setup();
+	render(<SearchGrid {...props} />);
+	return { props, user };
+}
+
+// The board renders each cell's id as its label, so a bare getByText('6')
+// would also match the "There are 6 cloaked ships" copy on other configs.
+// Scope every lookup to the grid.
+function cell(id) {
+	const grid = document.querySelector('.GridSpacing');
+	return within(grid).getByText(String(id));
+}
+
+// Reveals are deferred by REVEAL_DELAY, and MUI's Snackbar runs its own
+// transition on top of that. Fake timers deadlock against user-event's internal
+// scheduling here, so the suite waits the delay out for real — it is only
+// 250ms. The act() wrapper is what keeps React from warning about the state
+// updates those timers trigger.
+async function settle(ms = REVEAL_DELAY + 25) {
+	await act(async () => {
+		await new Promise((resolve) => setTimeout(resolve, ms));
+	});
+}
+
+async function clickCell(user, id) {
+	await user.click(cell(id));
+	await settle();
+}
+
+async function chooseMode(user, mode) {
+	await user.click(screen.getByRole('button', { name: mode }));
+	await settle(0);
+}
+
+async function fire(user) {
+	await user.click(screen.getByRole('button', { name: /fire!/i }));
+	await settle();
+}
+
+afterEach(() => {
+	vi.clearAllMocks();
+});
+
+describe('board rendering', () => {
+	test('renders one cell per square of the board', () => {
+		setup({ axis: 4 });
+		const grid = document.querySelector('.GridSpacing');
+		expect(within(grid).getByText('1')).toBeInTheDocument();
+		expect(within(grid).getByText('16')).toBeInTheDocument();
+		expect(within(grid).queryByText('17')).not.toBeInTheDocument();
+	});
+
+	test('pluralises the ship count message', () => {
+		const { unmount } = render(
+			<SearchGrid
+				axis={4}
+				ships={1}
+				fieldBg='black'
+				shipLocations={[6]}
+				diagonalMode={false}
+				diagonalModeStatus='off'
+				resetSuccessfulStreakCount={vi.fn()}
+				setSuccessfulStreakCount={vi.fn()}
+				setReadyToPlay={vi.fn()}
+				setShipLocations={vi.fn()}
+			/>,
+		);
+		expect(screen.getByText(/there is 1 cloaked ship!/i)).toBeInTheDocument();
+		unmount();
+
+		setup({ ships: 3, shipLocations: [6, 9, 14] });
+		expect(screen.getByText(/there are 3 cloaked ships!/i)).toBeInTheDocument();
+	});
+
+	test('reports whether diagonal mode is on', () => {
+		setup({ diagonalModeStatus: 'on' });
+		expect(screen.getByText(/diagonal scannning mode is on/i)).toBeInTheDocument();
+	});
+});
+
+describe('scan mode', () => {
+	test('scanning a ship on the first move is a lucky shot and spares the streak', async () => {
+		const { props, user } = setup();
+
+		await clickCell(user, 6);
+
+		expect(await screen.findByText(/that was lucky!/i)).toBeInTheDocument();
+		expect(props.resetSuccessfulStreakCount).not.toHaveBeenCalled();
+	});
+
+	test('scanning a ship after the first move ends the game and clears the streak', async () => {
+		const { props, user } = setup();
+
+		await clickCell(user, 16); // a harmless scan first
+		await clickCell(user, 6); // now hit the ship
+
+		expect(await screen.findByText(/game over!/i)).toBeInTheDocument();
+		expect(screen.getByText(/the ship was in cell: 6/i)).toBeInTheDocument();
+		expect(props.resetSuccessfulStreakCount).toHaveBeenCalled();
+	});
+
+	test('lists every ship cell in the game-over message when there are several', async () => {
+		const { user } = setup({ ships: 3, shipLocations: [14, 6, 9] });
+
+		await clickCell(user, 16);
+		await clickCell(user, 9);
+
+		// Sorted for readability regardless of generation order.
+		expect(await screen.findByText(/ships were in cells: 6, 9, 14/i)).toBeInTheDocument();
+	});
+
+	test('a scan does not end the game when it misses', async () => {
+		const { props, user } = setup();
+
+		await clickCell(user, 16);
+
+		expect(screen.queryByText(/game over!/i)).not.toBeInTheDocument();
+		expect(screen.queryByText(/that was lucky!/i)).not.toBeInTheDocument();
+		expect(props.resetSuccessfulStreakCount).not.toHaveBeenCalled();
+	});
+
+	test('scanning a previously targeted cell clears that mark', async () => {
+		const { props, user } = setup();
+
+		await chooseMode(user, 'Target');
+		await clickCell(user, 16);
+
+		await chooseMode(user, 'Scan');
+		await clickCell(user, 16); // un-marks it as a side effect
+
+		// 16 is no longer targeted, so firing at the real ship cell should now
+		// be a loss rather than a win.
+		await chooseMode(user, 'Target');
+		await clickCell(user, 6);
+		await fire(user);
+
+		expect(await screen.findByText(/you win!/i)).toBeInTheDocument();
+		expect(props.setSuccessfulStreakCount).toHaveBeenCalled();
+	});
+});
+
+describe('target and unlock modes', () => {
+	test('target mode marks a cell without scanning it', async () => {
+		const { props, user } = setup();
+
+		await chooseMode(user, 'Target');
+		await clickCell(user, 6); // the ship — but marking is not scanning
+
+		expect(screen.queryByText(/game over!/i)).not.toBeInTheDocument();
+		expect(props.resetSuccessfulStreakCount).not.toHaveBeenCalled();
+	});
+
+	test('unlock mode removes a mark so firing no longer counts it', async () => {
+		const { props, user } = setup();
+
+		await chooseMode(user, 'Target');
+		await clickCell(user, 6);
+
+		await chooseMode(user, 'Unlock');
+		await clickCell(user, 6);
+
+		await fire(user);
+
+		expect(await screen.findByText(/game over!/i)).toBeInTheDocument();
+		expect(props.setSuccessfulStreakCount).not.toHaveBeenCalled();
+	});
+});
+
+describe('firing', () => {
+	test('an exact match wins and increments the streak', async () => {
+		const { props, user } = setup({ ships: 2, shipLocations: [6, 11] });
+
+		await chooseMode(user, 'Target');
+		await clickCell(user, 6);
+		await clickCell(user, 11);
+
+		await fire(user);
+
+		expect(await screen.findByText(/you win!/i)).toBeInTheDocument();
+		expect(screen.getByText(/found and destroyed all of the ships/i)).toBeInTheDocument();
+		expect(props.setSuccessfulStreakCount).toHaveBeenCalledTimes(1);
+		expect(props.resetSuccessfulStreakCount).not.toHaveBeenCalled();
+	});
+
+	test('a partial match loses — finding some ships is not finding them all', async () => {
+		const { props, user } = setup({ ships: 2, shipLocations: [6, 11] });
+
+		await chooseMode(user, 'Target');
+		await clickCell(user, 6); // correct, but incomplete
+
+		await fire(user);
+
+		expect(await screen.findByText(/game over!/i)).toBeInTheDocument();
+		expect(props.resetSuccessfulStreakCount).toHaveBeenCalled();
+		expect(props.setSuccessfulStreakCount).not.toHaveBeenCalled();
+	});
+
+	test('over-targeting loses even when every ship is covered', async () => {
+		const { props, user } = setup();
+
+		await chooseMode(user, 'Target');
+		await clickCell(user, 6); // the ship
+		await clickCell(user, 7); // plus a guess too many
+
+		await fire(user);
+
+		expect(await screen.findByText(/game over!/i)).toBeInTheDocument();
+		expect(props.setSuccessfulStreakCount).not.toHaveBeenCalled();
+	});
+
+	test('firing with nothing targeted loses', async () => {
+		const { props, user } = setup();
+
+		await fire(user);
+
+		expect(await screen.findByText(/game over!/i)).toBeInTheDocument();
+		expect(props.resetSuccessfulStreakCount).toHaveBeenCalled();
+	});
+});
+
+describe('resetting', () => {
+	test('closing the result hands control back to the parent', async () => {
+		const { props, user } = setup();
+
+		await chooseMode(user, 'Target');
+		await clickCell(user, 6);
+		await fire(user);
+		expect(await screen.findByText(/you win!/i)).toBeInTheDocument();
+
+		await user.click(screen.getByRole('button', { name: /reset game/i }));
+		await settle(0);
+
+		expect(props.setReadyToPlay).toHaveBeenCalledWith(false);
+		expect(props.setShipLocations).toHaveBeenCalledWith([]);
+	});
+
+	test('unmounting mid-reveal does not fire a deferred state update', async () => {
+		const errors = [];
+		const spy = vi.spyOn(console, 'error').mockImplementation((...args) => errors.push(args));
+
+		const user = userEvent.setup();
+		const { unmount } = render(
+			<SearchGrid
+				axis={4}
+				ships={1}
+				fieldBg='black'
+				shipLocations={SHIPS}
+				diagonalMode={false}
+				diagonalModeStatus='off'
+				resetSuccessfulStreakCount={vi.fn()}
+				setSuccessfulStreakCount={vi.fn()}
+				setReadyToPlay={vi.fn()}
+				setShipLocations={vi.fn()}
+			/>,
+		);
+
+		await user.click(cell(16)); // reveal is now pending
+		unmount(); // player resets before it lands
+		await new Promise((resolve) => setTimeout(resolve, REVEAL_DELAY * 3));
+		// Deliberately not wrapped in act(): the whole point is that nothing
+		// should be updating after unmount.
+
+		expect(errors).toHaveLength(0);
+		spy.mockRestore();
+	});
+});

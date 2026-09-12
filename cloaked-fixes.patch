@@ -1,0 +1,1540 @@
+diff --git a/package.json b/package.json
+index 337128b..c935246 100644
+--- a/package.json
++++ b/package.json
+@@ -10,8 +10,7 @@
+ 		"@fontsource/roboto": "^5.0.8",
+ 		"@mui/material": "^5.15.1",
+ 		"react": "^18.2.0",
+-		"react-dom": "^18.2.0",
+-		"web-vitals": "^2.1.4"
++		"react-dom": "^18.2.0"
+ 	},
+ 	"devDependencies": {
+ 		"@testing-library/dom": "^10.4.1",
+@@ -19,7 +18,6 @@
+ 		"@testing-library/react": "^16.1.0",
+ 		"@testing-library/user-event": "^14.5.2",
+ 		"@vitejs/plugin-react": "^6.0.2",
+-		"gh-pages": "^6.1.1",
+ 		"jsdom": "^29.1.1",
+ 		"vite": "^8.0.14",
+ 		"vitest": "^4.1.7"
+@@ -30,8 +28,6 @@
+ 		"build": "vite build",
+ 		"preview": "vite preview",
+ 		"test": "vitest",
+-		"test:run": "vitest run",
+-		"predeploy": "npm run build",
+-		"deploy": "gh-pages -d build"
++		"test:run": "vitest run"
+ 	}
+ }
+diff --git a/src/Components/CellStatus.js b/src/Components/CellStatus.js
+index c54ecf4..8e0b751 100644
+--- a/src/Components/CellStatus.js
++++ b/src/Components/CellStatus.js
+@@ -14,9 +14,11 @@ const STYLES = {
+ };
+ 
+ // Resolve a status (plus the board's default background) to actual colors.
++// An unrecognised status falls back to the hidden style rather than returning
++// undefined — Square destructures this result, so undefined would throw and
++// take the whole board down over a typo'd status string.
+ export function statusStyle(status, fieldBg) {
+-	if (!status || status === CELL.HIDDEN) {
+-		return { bg: fieldBg, fontColor: 'black' };
+-	}
+-	return STYLES[status];
++	const hidden = { bg: fieldBg, fontColor: 'black' };
++	if (!status || status === CELL.HIDDEN) return hidden;
++	return STYLES[status] ?? hidden;
+ }
+diff --git a/src/Components/CellStatus.test.js b/src/Components/CellStatus.test.js
+new file mode 100644
+index 0000000..064ef59
+--- /dev/null
++++ b/src/Components/CellStatus.test.js
+@@ -0,0 +1,58 @@
++import { CELL, statusStyle } from './CellStatus';
++
++describe('statusStyle', () => {
++	const FIELD_BG = 'url(galaxy.webp)';
++
++	test('an unscanned cell shows the board background', () => {
++		expect(statusStyle(CELL.HIDDEN, FIELD_BG)).toEqual({
++			bg: FIELD_BG,
++			fontColor: 'black',
++		});
++	});
++
++	test('a cell with no status yet is treated as hidden', () => {
++		// SearchGrid keeps cellStatus as a sparse map, so every cell starts
++		// undefined rather than explicitly HIDDEN.
++		expect(statusStyle(undefined, FIELD_BG)).toEqual({
++			bg: FIELD_BG,
++			fontColor: 'black',
++		});
++		expect(statusStyle('', FIELD_BG)).toEqual({
++			bg: FIELD_BG,
++			fontColor: 'black',
++		});
++	});
++
++	test('each scanned status resolves to its own colour', () => {
++		expect(statusStyle(CELL.CLEAR, FIELD_BG).bg).toBe('black');
++		expect(statusStyle(CELL.ADJACENT, FIELD_BG).bg).toBe('#1976d2');
++		expect(statusStyle(CELL.TARGETED, FIELD_BG).bg).toBe('green');
++		expect(statusStyle(CELL.SHIP, FIELD_BG).bg).toBe('#d32f2f');
++	});
++
++	test('every scanned status is legible against its background', () => {
++		[CELL.CLEAR, CELL.ADJACENT, CELL.TARGETED, CELL.SHIP].forEach((status) => {
++			expect(statusStyle(status, FIELD_BG).fontColor).toBe('white');
++		});
++	});
++
++	test('an unrecognised status falls back instead of returning undefined', () => {
++		// Square destructures this result. Before the fallback, a typo'd status
++		// string returned undefined and took the whole board down with a
++		// TypeError rather than rendering one wrong-coloured cell.
++		expect(() => {
++			const { bg } = statusStyle('not-a-real-status', FIELD_BG);
++			return bg;
++		}).not.toThrow();
++
++		expect(statusStyle('not-a-real-status', FIELD_BG)).toEqual({
++			bg: FIELD_BG,
++			fontColor: 'black',
++		});
++	});
++
++	test('CELL values are unique so two statuses cannot collide', () => {
++		const values = Object.values(CELL);
++		expect(new Set(values).size).toBe(values.length);
++	});
++});
+diff --git a/src/Components/GameLogic.js b/src/Components/GameLogic.js
+index b4e3616..ab3d875 100644
+--- a/src/Components/GameLogic.js
++++ b/src/Components/GameLogic.js
+@@ -72,13 +72,19 @@ export function isWin(shipLocations, targeted) {
+  * A "lucky shot" is the very first scan of the game landing on a ship that the
+  * player had not already targeted. It spares the player's streak.
+  *
++ * `ships` is checked here rather than assumed. The caller happens to only
++ * invoke this after confirming a ship hit, but a reader of this module cannot
++ * see that, and a docblock that depends on invisible caller discipline is a
++ * docblock that will eventually be wrong.
++ *
+  * @param {number} scanCount - scans taken so far this game (before this one)
+  * @param {number} id - the cell just scanned
+  * @param {number[]} targeted - currently targeted cells
++ * @param {number[]} ships - ship cell ids
+  * @returns {boolean}
+  */
+-export function isLuckyFirstScan(scanCount, id, targeted) {
+-	return scanCount < 1 && !targeted.includes(id);
++export function isLuckyFirstScan(scanCount, id, targeted, ships) {
++	return scanCount < 1 && ships.includes(id) && !targeted.includes(id);
+ }
+ 
+ /**
+@@ -91,8 +97,24 @@ export function isLuckyFirstScan(scanCount, id, targeted) {
+  * @param {number[]} [existing=[]] - ids to keep
+  * @param {() => number} [rng=Math.random] - returns a float in [0, 1)
+  * @returns {number[]}
++ * @throws {RangeError} if the request cannot be satisfied
+  */
+ export function generateUniqueRandomNumbers(count, maxValue, existing = [], rng = Math.random) {
++	// Without this guard the loop below spins forever: asking for more unique
++	// ids than the range contains means `numbers.size` can never reach `count`.
++	// Today's UI caps ships at 5 on a 16-cell board so it is unreachable, but an
++	// unbounded while-loop is not something to leave sitting in the one module
++	// the whole game depends on.
++	if (!Number.isInteger(count) || count < 0) {
++		throw new RangeError(`count must be a non-negative integer, got ${count}`);
++	}
++	if (!Number.isInteger(maxValue) || maxValue < 0) {
++		throw new RangeError(`maxValue must be a non-negative integer, got ${maxValue}`);
++	}
++	if (count > maxValue) {
++		throw new RangeError(`cannot pick ${count} unique ids from a range of ${maxValue}`);
++	}
++
+ 	const numbers = new Set(existing);
+ 	while (numbers.size < count) {
+ 		numbers.add(Math.floor(rng() * maxValue) + 1);
+diff --git a/src/Components/GameLogic.test.js b/src/Components/GameLogic.test.js
+index 3b1ae2d..5bd20c9 100644
+--- a/src/Components/GameLogic.test.js
++++ b/src/Components/GameLogic.test.js
+@@ -100,16 +100,26 @@ describe('isWin', () => {
+ });
+ 
+ describe('isLuckyFirstScan', () => {
+-	test('is lucky on the first scan of an untargeted cell', () => {
+-		expect(isLuckyFirstScan(0, 10, [])).toBe(true);
++	const ships = [10, 22];
++
++	test('is lucky on the first scan of an untargeted ship cell', () => {
++		expect(isLuckyFirstScan(0, 10, [], ships)).toBe(true);
+ 	});
+ 
+ 	test('is not lucky if the cell was already targeted', () => {
+-		expect(isLuckyFirstScan(0, 10, [10])).toBe(false);
++		expect(isLuckyFirstScan(0, 10, [10], ships)).toBe(false);
+ 	});
+ 
+ 	test('is not lucky after the first scan', () => {
+-		expect(isLuckyFirstScan(1, 10, [])).toBe(false);
++		expect(isLuckyFirstScan(1, 10, [], ships)).toBe(false);
++	});
++
++	test('is not lucky when the first scan misses every ship', () => {
++		// Previously unprovable: the function never looked at ships, so an empty
++		// water cell on turn one reported "lucky" and only the caller's own
++		// branch kept the streak safe.
++		expect(isLuckyFirstScan(0, 11, [], ships)).toBe(false);
++		expect(isLuckyFirstScan(0, 11, [], [])).toBe(false);
+ 	});
+ });
+ 
+@@ -149,4 +159,31 @@ describe('generateUniqueRandomNumbers', () => {
+ 	test('returns existing ids untouched when count is already satisfied', () => {
+ 		expect(generateUniqueRandomNumbers(2, 36, [4, 9])).toEqual([4, 9]);
+ 	});
++
++	// --- unsatisfiable requests --------------------------------------------
++	// Each of these used to hang the process instead of failing.
++
++	test('throws rather than looping forever when count exceeds the range', () => {
++		expect(() => generateUniqueRandomNumbers(10, 9)).toThrow(RangeError);
++		expect(() => generateUniqueRandomNumbers(1, 0)).toThrow(RangeError);
++	});
++
++	test('throws on a non-integer or negative count', () => {
++		expect(() => generateUniqueRandomNumbers(2.5, 36)).toThrow(RangeError);
++		expect(() => generateUniqueRandomNumbers(-1, 36)).toThrow(RangeError);
++	});
++
++	test('throws on a non-integer or negative maxValue', () => {
++		expect(() => generateUniqueRandomNumbers(2, 3.5)).toThrow(RangeError);
++		expect(() => generateUniqueRandomNumbers(2, -5)).toThrow(RangeError);
++	});
++
++	test('allows the exact-fit case where count equals the range', () => {
++		const result = generateUniqueRandomNumbers(4, 4);
++		expect(result.sort((a, b) => a - b)).toEqual([1, 2, 3, 4]);
++	});
++
++	test('handles a zero-count request', () => {
++		expect(generateUniqueRandomNumbers(0, 36)).toEqual([]);
++	});
+ });
+diff --git a/src/Components/GameSpace.jsx b/src/Components/GameSpace.jsx
+index 3eeb633..4c83eca 100644
+--- a/src/Components/GameSpace.jsx
++++ b/src/Components/GameSpace.jsx
+@@ -7,17 +7,23 @@ import './GameSpace.css';
+ import { lightBlue } from '@mui/material/colors';
+ import { generateUniqueRandomNumbers } from './GameLogic';
+ 
++const INITIAL_FIELD_BG = 'rgba(255,255,255,.1)';
++const STREAK_STORAGE_KEY = 'successfulStreakCount';
++
+ function GameSpace() {
+ 	const [readyToPlay, setReadyToPlay] = useState(false);
+ 	const [axis, setAxis] = useState(6);
+-	let maxValue = axis * axis;
++	const maxValue = axis * axis;
+ 	const [successfulStreakCount, setSuccessfulStreakCount] = useState(0);
+ 	const [ships, setShip] = useState(2);
+-	const [fieldBg, setFieldBg] = useState('rgba(255,255,255,.1)');
++	const [fieldBg, setFieldBg] = useState(INITIAL_FIELD_BG);
+ 	const [shipLocations, setShipLocations] = useState([]);
+ 	const [openInstructions, setOpenInstructions] = useState(false);
++	// One piece of state, not two. The label is derived, so the button caption
++	// and the behaviour cannot drift apart — the same fix already applied to the
++	// Scan/Target/Unlock buttons in SearchGrid.
+ 	const [diagonalMode, setDiagonalMode] = useState(false);
+-	const [diagonalModeStatus, setDiagonalModeStatus] = useState('Off');
++	const diagonalModeStatus = diagonalMode ? 'On' : 'Off';
+ 	const axisMarks = [
+ 		{
+ 			value: 4,
+@@ -72,26 +78,28 @@ function GameSpace() {
+ 	};
+ 
+ 	const handleGenerateClick = () => {
+-		const newShipLocations = generateUniqueRandomNumbers(ships, maxValue, shipLocations);
+-		setShipLocations(newShipLocations);
++		// Deliberately does NOT seed with the previous game's ships. Passing them
++		// as `existing` meant that when the count was unchanged the set was already
++		// full and the function returned the OLD positions untouched — every replay
++		// hid the ships in exactly the same cells.
++		setShipLocations(generateUniqueRandomNumbers(ships, maxValue));
+ 	};
+ 
+ 	useEffect(() => {
+-		// Retrieve the streak count from local storage or initialize it if not present
+-		const storedCount = localStorage.getItem('successfulStreakCount');
+-		if (storedCount !== null) {
+-			/* console.log('Retrieved from local storage:', storedCount); */
+-			setSuccessfulStreakCount(parseInt(storedCount, 10));
++		// Anything can end up in localStorage — a half-written value, an older
++		// format, a user poking at devtools. parseInt('') is NaN, and NaN rendered
++		// straight into "Streak Count:" is a permanently broken display with no way
++		// back, so fall back to 0 rather than trusting what we read.
++		const stored = Number.parseInt(localStorage.getItem(STREAK_STORAGE_KEY), 10);
++		if (Number.isInteger(stored) && stored >= 0) {
++			setSuccessfulStreakCount(stored);
+ 		}
+ 	}, []);
+ 
+ 	useEffect(() => {
+ 		// Update local storage whenever successfulStreakCount changes
+ 		const timer = setTimeout(() => {
+-			if (successfulStreakCount !== null && successfulStreakCount >= 0) {
+-				/* console.log('Updating local storage to:', successfulStreakCount); */
+-				localStorage.setItem('successfulStreakCount', successfulStreakCount);
+-			}
++			localStorage.setItem(STREAK_STORAGE_KEY, String(successfulStreakCount));
+ 		}, 100);
+ 
+ 		return () => clearTimeout(timer);
+@@ -152,10 +160,7 @@ function GameSpace() {
+ 							<Button
+ 								variant='text'
+ 								color='primary'
+-								onClick={() => {
+-									setDiagonalMode(!diagonalMode);
+-									setDiagonalModeStatus(diagonalModeStatus === 'Off' ? 'On' : 'Off');
+-								}}
++								onClick={() => setDiagonalMode((prev) => !prev)}
+ 							>
+ 								{diagonalModeStatus}
+ 							</Button>
+@@ -166,8 +171,7 @@ function GameSpace() {
+ 					<Button
+ 						variant='outlined'
+ 						onClick={() => {
+-							setReadyToPlay(!readyToPlay);
+-							setShipLocations([]);
++							setReadyToPlay(true);
+ 							handleGenerateClick();
+ 						}}
+ 					>
+@@ -188,8 +192,11 @@ function GameSpace() {
+ 									},
+ 								}}
+ 								onClick={() => {
+-									setReadyToPlay(!readyToPlay);
+-									setFieldBg('white');
++									setReadyToPlay(false);
++									// Was setFieldBg('white'), which had no route back — one
++									// reset changed the board background for the rest of the
++									// session. Restore the starting value instead.
++									setFieldBg(INITIAL_FIELD_BG);
+ 									setShipLocations([]);
+ 								}}
+ 							>
+diff --git a/src/Components/GameSpace.test.jsx b/src/Components/GameSpace.test.jsx
+new file mode 100644
+index 0000000..379058a
+--- /dev/null
++++ b/src/Components/GameSpace.test.jsx
+@@ -0,0 +1,189 @@
++import { render, screen, within, act } from '@testing-library/react';
++import userEvent from '@testing-library/user-event';
++import GameSpace from './GameSpace';
++
++// GameSpace owns everything outside a round: board configuration, the streak
++// counter and its localStorage persistence, and handing a freshly generated
++// set of ship positions down to SearchGrid.
++//
++// The ship positions are random by design, so rather than assert on specific
++// cells these tests assert on the properties that must hold — the right number
++// of ships, inside the board, and different from last game.
++
++async function settle(ms = 150) {
++	await act(async () => {
++		await new Promise((resolve) => setTimeout(resolve, ms));
++	});
++}
++
++function begin(user) {
++	return user.click(screen.getByRole('button', { name: /begin search/i }));
++}
++
++// Read the board back out of the DOM: every revealed ship is found by scanning
++// every cell, which is far too slow. Instead, count the cells the grid renders
++// and rely on SearchGrid's own message for the ship count.
++function boardCellCount() {
++	const grid = document.querySelector('.GridSpacing');
++	return grid ? grid.querySelectorAll('.MuiPaper-root').length : 0;
++}
++
++beforeEach(() => {
++	localStorage.clear();
++});
++
++describe('setup screen', () => {
++	test('opens on the welcome screen with a zero streak', () => {
++		render(<GameSpace />);
++		expect(screen.getByText(/welcome to cloaked!/i)).toBeInTheDocument();
++		expect(screen.getByText(/streak count: 0/i)).toBeInTheDocument();
++	});
++
++	test('diagonal mode starts off and the button label tracks the state', async () => {
++		const user = userEvent.setup();
++		render(<GameSpace />);
++
++		const toggle = screen.getByRole('button', { name: 'Off' });
++		await user.click(toggle);
++
++		// A single piece of state drives both. Before, the label and the flag
++		// were separate useStates that had to be kept in step by hand.
++		expect(screen.getByRole('button', { name: 'On' })).toBeInTheDocument();
++		expect(screen.queryByRole('button', { name: 'Off' })).not.toBeInTheDocument();
++	});
++
++	test('the chosen diagonal mode reaches the board', async () => {
++		const user = userEvent.setup();
++		render(<GameSpace />);
++
++		await user.click(screen.getByRole('button', { name: 'Off' }));
++		await begin(user);
++
++		expect(screen.getByText(/diagonal scannning mode is on/i)).toBeInTheDocument();
++	});
++
++	test('opens the instructions', async () => {
++		const user = userEvent.setup();
++		render(<GameSpace />);
++
++		await user.click(screen.getByRole('button', { name: /instructions/i }));
++
++		expect(await screen.findByRole('dialog')).toBeInTheDocument();
++	});
++});
++
++describe('starting a round', () => {
++	test('renders a board of the default size with the default ship count', async () => {
++		const user = userEvent.setup();
++		render(<GameSpace />);
++
++		await begin(user);
++
++		// Defaults are a 6x6 board with 2 ships.
++		expect(boardCellCount()).toBe(36);
++		expect(screen.getByText(/there are 2 cloaked ships!/i)).toBeInTheDocument();
++	});
++
++	test('hides the setup controls once play begins', async () => {
++		const user = userEvent.setup();
++		render(<GameSpace />);
++
++		await begin(user);
++
++		expect(screen.getByRole('button', { name: /fire!/i })).toBeInTheDocument();
++	});
++
++	test('places a new set of ships on every round', async () => {
++		// The regression this guards: handleGenerateClick used to seed the
++		// generator with the previous round's ships. With the count unchanged
++		// the set was already full, so it handed back the OLD positions and the
++		// ships never moved between games.
++		const user = userEvent.setup();
++		const seen = [];
++		const spy = vi.spyOn(Math, 'random');
++
++		render(<GameSpace />);
++
++		for (let round = 0; round < 3; round++) {
++			spy.mockClear();
++			await begin(user);
++			// Each round must actually consult the RNG. If the generator short
++			// circuits on a pre-filled set it never calls random at all.
++			expect(spy.mock.calls.length).toBeGreaterThan(0);
++			seen.push(spy.mock.calls.length);
++
++			await user.click(screen.getByRole('button', { name: /reset game/i }));
++			await settle(0);
++		}
++
++		spy.mockRestore();
++		expect(seen).toHaveLength(3);
++	});
++});
++
++describe('streak persistence', () => {
++	test('restores a saved streak on load', () => {
++		localStorage.setItem('successfulStreakCount', '7');
++		render(<GameSpace />);
++		expect(screen.getByText(/streak count: 7/i)).toBeInTheDocument();
++	});
++
++	test('ignores a corrupt stored value instead of rendering NaN', () => {
++		// parseInt('banana') is NaN, which used to go straight into state and
++		// render "Streak Count: NaN" with no way back short of clearing storage.
++		localStorage.setItem('successfulStreakCount', 'banana');
++		render(<GameSpace />);
++
++		expect(screen.getByText(/streak count: 0/i)).toBeInTheDocument();
++		expect(screen.queryByText(/nan/i)).not.toBeInTheDocument();
++	});
++
++	test('ignores a negative stored value', () => {
++		localStorage.setItem('successfulStreakCount', '-4');
++		render(<GameSpace />);
++		expect(screen.getByText(/streak count: 0/i)).toBeInTheDocument();
++	});
++
++	test('writes the streak back to storage', async () => {
++		render(<GameSpace />);
++		await settle(); // the write is debounced by 100ms
++
++		expect(localStorage.getItem('successfulStreakCount')).toBe('0');
++	});
++});
++
++describe('resetting a round', () => {
++	test('returns to the setup screen', async () => {
++		const user = userEvent.setup();
++		render(<GameSpace />);
++
++		await begin(user);
++		expect(screen.getByRole('button', { name: /fire!/i })).toBeInTheDocument();
++
++		await user.click(screen.getByRole('button', { name: /reset game/i }));
++		await settle(0);
++
++		expect(screen.queryByRole('button', { name: /fire!/i })).not.toBeInTheDocument();
++		expect(screen.getByText(/welcome to cloaked!/i)).toBeInTheDocument();
++	});
++
++	test('a reset does not permanently change the board background', async () => {
++		// Reset used to call setFieldBg('white') with no route back, so the
++		// first reset of a session changed the look of every later board.
++		const user = userEvent.setup();
++		render(<GameSpace />);
++
++		await begin(user);
++		const firstGrid = document.querySelector('.GridSpacing');
++		const firstCell = within(firstGrid).getByText('1').className;
++
++		await user.click(screen.getByRole('button', { name: /reset game/i }));
++		await settle(0);
++		await begin(user);
++
++		const secondGrid = document.querySelector('.GridSpacing');
++		const secondCell = within(secondGrid).getByText('1').className;
++
++		expect(secondCell).toBe(firstCell);
++	});
++});
+diff --git a/src/Components/SearchGrid.jsx b/src/Components/SearchGrid.jsx
+index 61ba7fa..bf2ee77 100644
+--- a/src/Components/SearchGrid.jsx
++++ b/src/Components/SearchGrid.jsx
+@@ -116,7 +116,7 @@ function SearchGrid(props) {
+ 		setStatus(id, CELL.SHIP, REVEAL_DELAY);
+ 		// "Lucky" only on the very first scan of a cell that wasn't targeted.
+ 		// scanCount is still the pre-increment value within this render pass.
+-		const lucky = isLuckyFirstScan(scanCount, id, targeted);
++		const lucky = isLuckyFirstScan(scanCount, id, targeted, shipsToPass);
+ 		if (isInArray(id, targeted)) removeTargeted(id);
+ 		if (!lucky) clearStreak();
+ 		schedule(() => {
+diff --git a/src/Components/SearchGrid.test.jsx b/src/Components/SearchGrid.test.jsx
+new file mode 100644
+index 0000000..71b3544
+--- /dev/null
++++ b/src/Components/SearchGrid.test.jsx
+@@ -0,0 +1,305 @@
++import { render, screen, within, act } from '@testing-library/react';
++import userEvent from '@testing-library/user-event';
++import SearchGrid from './SearchGrid';
++import { REVEAL_DELAY } from './Constants';
++
++// SearchGrid was the largest untested file in the project. These tests cover
++// the wiring rather than the rules: the rules already have unit tests in
++// GameLogic.test.js, and re-asserting adjacency maths through a rendered DOM
++// would be slower, more brittle, and no more convincing.
++//
++// What is actually worth asserting here is everything the pure module cannot
++// see — that the right mode routes to the right handler, that scheduled
++// reveals land, that the streak callbacks fire on the right outcomes, and that
++// a reset clears the board state upward.
++//
++// Board used throughout (axis 4, ids 1..16):
++//    1  2  3  4
++//    5  6  7  8
++//    9 10 11 12
++//   13 14 15 16
++// Ship on 6. Cell 2 is adjacent (directly above), cell 16 is not.
++
++const SHIPS = [6];
++
++function setup(overrides = {}) {
++	const props = {
++		axis: 4,
++		ships: 1,
++		fieldBg: 'black',
++		shipLocations: SHIPS,
++		diagonalMode: false,
++		diagonalModeStatus: 'off',
++		resetSuccessfulStreakCount: vi.fn(),
++		setSuccessfulStreakCount: vi.fn(),
++		setReadyToPlay: vi.fn(),
++		setShipLocations: vi.fn(),
++		...overrides,
++	};
++
++	const user = userEvent.setup();
++	render(<SearchGrid {...props} />);
++	return { props, user };
++}
++
++// The board renders each cell's id as its label, so a bare getByText('6')
++// would also match the "There are 6 cloaked ships" copy on other configs.
++// Scope every lookup to the grid.
++function cell(id) {
++	const grid = document.querySelector('.GridSpacing');
++	return within(grid).getByText(String(id));
++}
++
++// Reveals are deferred by REVEAL_DELAY, and MUI's Snackbar runs its own
++// transition on top of that. Fake timers deadlock against user-event's internal
++// scheduling here, so the suite waits the delay out for real — it is only
++// 250ms. The act() wrapper is what keeps React from warning about the state
++// updates those timers trigger.
++async function settle(ms = REVEAL_DELAY + 25) {
++	await act(async () => {
++		await new Promise((resolve) => setTimeout(resolve, ms));
++	});
++}
++
++async function clickCell(user, id) {
++	await user.click(cell(id));
++	await settle();
++}
++
++async function chooseMode(user, mode) {
++	await user.click(screen.getByRole('button', { name: mode }));
++	await settle(0);
++}
++
++async function fire(user) {
++	await user.click(screen.getByRole('button', { name: /fire!/i }));
++	await settle();
++}
++
++afterEach(() => {
++	vi.clearAllMocks();
++});
++
++describe('board rendering', () => {
++	test('renders one cell per square of the board', () => {
++		setup({ axis: 4 });
++		const grid = document.querySelector('.GridSpacing');
++		expect(within(grid).getByText('1')).toBeInTheDocument();
++		expect(within(grid).getByText('16')).toBeInTheDocument();
++		expect(within(grid).queryByText('17')).not.toBeInTheDocument();
++	});
++
++	test('pluralises the ship count message', () => {
++		const { unmount } = render(
++			<SearchGrid
++				axis={4}
++				ships={1}
++				fieldBg='black'
++				shipLocations={[6]}
++				diagonalMode={false}
++				diagonalModeStatus='off'
++				resetSuccessfulStreakCount={vi.fn()}
++				setSuccessfulStreakCount={vi.fn()}
++				setReadyToPlay={vi.fn()}
++				setShipLocations={vi.fn()}
++			/>,
++		);
++		expect(screen.getByText(/there is 1 cloaked ship!/i)).toBeInTheDocument();
++		unmount();
++
++		setup({ ships: 3, shipLocations: [6, 9, 14] });
++		expect(screen.getByText(/there are 3 cloaked ships!/i)).toBeInTheDocument();
++	});
++
++	test('reports whether diagonal mode is on', () => {
++		setup({ diagonalModeStatus: 'on' });
++		expect(screen.getByText(/diagonal scannning mode is on/i)).toBeInTheDocument();
++	});
++});
++
++describe('scan mode', () => {
++	test('scanning a ship on the first move is a lucky shot and spares the streak', async () => {
++		const { props, user } = setup();
++
++		await clickCell(user, 6);
++
++		expect(await screen.findByText(/that was lucky!/i)).toBeInTheDocument();
++		expect(props.resetSuccessfulStreakCount).not.toHaveBeenCalled();
++	});
++
++	test('scanning a ship after the first move ends the game and clears the streak', async () => {
++		const { props, user } = setup();
++
++		await clickCell(user, 16); // a harmless scan first
++		await clickCell(user, 6); // now hit the ship
++
++		expect(await screen.findByText(/game over!/i)).toBeInTheDocument();
++		expect(screen.getByText(/the ship was in cell: 6/i)).toBeInTheDocument();
++		expect(props.resetSuccessfulStreakCount).toHaveBeenCalled();
++	});
++
++	test('lists every ship cell in the game-over message when there are several', async () => {
++		const { user } = setup({ ships: 3, shipLocations: [14, 6, 9] });
++
++		await clickCell(user, 16);
++		await clickCell(user, 9);
++
++		// Sorted for readability regardless of generation order.
++		expect(await screen.findByText(/ships were in cells: 6, 9, 14/i)).toBeInTheDocument();
++	});
++
++	test('a scan does not end the game when it misses', async () => {
++		const { props, user } = setup();
++
++		await clickCell(user, 16);
++
++		expect(screen.queryByText(/game over!/i)).not.toBeInTheDocument();
++		expect(screen.queryByText(/that was lucky!/i)).not.toBeInTheDocument();
++		expect(props.resetSuccessfulStreakCount).not.toHaveBeenCalled();
++	});
++
++	test('scanning a previously targeted cell clears that mark', async () => {
++		const { props, user } = setup();
++
++		await chooseMode(user, 'Target');
++		await clickCell(user, 16);
++
++		await chooseMode(user, 'Scan');
++		await clickCell(user, 16); // un-marks it as a side effect
++
++		// 16 is no longer targeted, so firing at the real ship cell should now
++		// be a loss rather than a win.
++		await chooseMode(user, 'Target');
++		await clickCell(user, 6);
++		await fire(user);
++
++		expect(await screen.findByText(/you win!/i)).toBeInTheDocument();
++		expect(props.setSuccessfulStreakCount).toHaveBeenCalled();
++	});
++});
++
++describe('target and unlock modes', () => {
++	test('target mode marks a cell without scanning it', async () => {
++		const { props, user } = setup();
++
++		await chooseMode(user, 'Target');
++		await clickCell(user, 6); // the ship — but marking is not scanning
++
++		expect(screen.queryByText(/game over!/i)).not.toBeInTheDocument();
++		expect(props.resetSuccessfulStreakCount).not.toHaveBeenCalled();
++	});
++
++	test('unlock mode removes a mark so firing no longer counts it', async () => {
++		const { props, user } = setup();
++
++		await chooseMode(user, 'Target');
++		await clickCell(user, 6);
++
++		await chooseMode(user, 'Unlock');
++		await clickCell(user, 6);
++
++		await fire(user);
++
++		expect(await screen.findByText(/game over!/i)).toBeInTheDocument();
++		expect(props.setSuccessfulStreakCount).not.toHaveBeenCalled();
++	});
++});
++
++describe('firing', () => {
++	test('an exact match wins and increments the streak', async () => {
++		const { props, user } = setup({ ships: 2, shipLocations: [6, 11] });
++
++		await chooseMode(user, 'Target');
++		await clickCell(user, 6);
++		await clickCell(user, 11);
++
++		await fire(user);
++
++		expect(await screen.findByText(/you win!/i)).toBeInTheDocument();
++		expect(screen.getByText(/found and destroyed all of the ships/i)).toBeInTheDocument();
++		expect(props.setSuccessfulStreakCount).toHaveBeenCalledTimes(1);
++		expect(props.resetSuccessfulStreakCount).not.toHaveBeenCalled();
++	});
++
++	test('a partial match loses — finding some ships is not finding them all', async () => {
++		const { props, user } = setup({ ships: 2, shipLocations: [6, 11] });
++
++		await chooseMode(user, 'Target');
++		await clickCell(user, 6); // correct, but incomplete
++
++		await fire(user);
++
++		expect(await screen.findByText(/game over!/i)).toBeInTheDocument();
++		expect(props.resetSuccessfulStreakCount).toHaveBeenCalled();
++		expect(props.setSuccessfulStreakCount).not.toHaveBeenCalled();
++	});
++
++	test('over-targeting loses even when every ship is covered', async () => {
++		const { props, user } = setup();
++
++		await chooseMode(user, 'Target');
++		await clickCell(user, 6); // the ship
++		await clickCell(user, 7); // plus a guess too many
++
++		await fire(user);
++
++		expect(await screen.findByText(/game over!/i)).toBeInTheDocument();
++		expect(props.setSuccessfulStreakCount).not.toHaveBeenCalled();
++	});
++
++	test('firing with nothing targeted loses', async () => {
++		const { props, user } = setup();
++
++		await fire(user);
++
++		expect(await screen.findByText(/game over!/i)).toBeInTheDocument();
++		expect(props.resetSuccessfulStreakCount).toHaveBeenCalled();
++	});
++});
++
++describe('resetting', () => {
++	test('closing the result hands control back to the parent', async () => {
++		const { props, user } = setup();
++
++		await chooseMode(user, 'Target');
++		await clickCell(user, 6);
++		await fire(user);
++		expect(await screen.findByText(/you win!/i)).toBeInTheDocument();
++
++		await user.click(screen.getByRole('button', { name: /reset game/i }));
++		await settle(0);
++
++		expect(props.setReadyToPlay).toHaveBeenCalledWith(false);
++		expect(props.setShipLocations).toHaveBeenCalledWith([]);
++	});
++
++	test('unmounting mid-reveal does not fire a deferred state update', async () => {
++		const errors = [];
++		const spy = vi.spyOn(console, 'error').mockImplementation((...args) => errors.push(args));
++
++		const user = userEvent.setup();
++		const { unmount } = render(
++			<SearchGrid
++				axis={4}
++				ships={1}
++				fieldBg='black'
++				shipLocations={SHIPS}
++				diagonalMode={false}
++				diagonalModeStatus='off'
++				resetSuccessfulStreakCount={vi.fn()}
++				setSuccessfulStreakCount={vi.fn()}
++				setReadyToPlay={vi.fn()}
++				setShipLocations={vi.fn()}
++			/>,
++		);
++
++		await user.click(cell(16)); // reveal is now pending
++		unmount(); // player resets before it lands
++		await new Promise((resolve) => setTimeout(resolve, REVEAL_DELAY * 3));
++		// Deliberately not wrapped in act(): the whole point is that nothing
++		// should be updating after unmount.
++
++		expect(errors).toHaveLength(0);
++		spy.mockRestore();
++	});
++});
+diff --git a/src/galaxy-night-view.webp b/src/galaxy-night-view.webp
+deleted file mode 100644
+index 65ff558f192ca51a425051526ebef2a012ca3d5e..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 32044
+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
+b2qijUtGo`e#FG_JP+v%FB~wa5)#v~K?m7dm
+
+diff --git a/src/index.jsx b/src/index.jsx
+index d563c0f..2cb1087 100644
+--- a/src/index.jsx
++++ b/src/index.jsx
+@@ -2,7 +2,6 @@ import React from 'react';
+ import ReactDOM from 'react-dom/client';
+ import './index.css';
+ import App from './App';
+-import reportWebVitals from './reportWebVitals';
+ 
+ const root = ReactDOM.createRoot(document.getElementById('root'));
+ root.render(
+@@ -10,8 +9,3 @@ root.render(
+     <App />
+   </React.StrictMode>
+ );
+-
+-// If you want to start measuring performance in your app, pass a function
+-// to log results (for example: reportWebVitals(console.log))
+-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+-reportWebVitals();
+diff --git a/src/reportWebVitals.js b/src/reportWebVitals.js
+deleted file mode 100644
+index 5253d3a..0000000
+--- a/src/reportWebVitals.js
++++ /dev/null
+@@ -1,13 +0,0 @@
+-const reportWebVitals = onPerfEntry => {
+-  if (onPerfEntry && onPerfEntry instanceof Function) {
+-    import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
+-      getCLS(onPerfEntry);
+-      getFID(onPerfEntry);
+-      getFCP(onPerfEntry);
+-      getLCP(onPerfEntry);
+-      getTTFB(onPerfEntry);
+-    });
+-  }
+-};
+-
+-export default reportWebVitals;
+diff --git a/vite.config.js b/vite.config.js
+index 01b9507..94928f0 100644
+--- a/vite.config.js
++++ b/vite.config.js
+@@ -17,7 +17,8 @@ export default defineConfig({
+ 	},
+ 
+ 	build: {
+-		// Keep CRA's output folder name so `gh-pages -d build` still works.
++		// The Pages workflow uploads ./build as its artifact — keep the two in
++		// step if this ever changes.
+ 		outDir: 'build',
+ 	},
+ 
