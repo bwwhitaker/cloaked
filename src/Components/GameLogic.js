@@ -72,13 +72,19 @@ export function isWin(shipLocations, targeted) {
  * A "lucky shot" is the very first scan of the game landing on a ship that the
  * player had not already targeted. It spares the player's streak.
  *
+ * `ships` is checked here rather than assumed. The caller happens to only
+ * invoke this after confirming a ship hit, but a reader of this module cannot
+ * see that, and a docblock that depends on invisible caller discipline is a
+ * docblock that will eventually be wrong.
+ *
  * @param {number} scanCount - scans taken so far this game (before this one)
  * @param {number} id - the cell just scanned
  * @param {number[]} targeted - currently targeted cells
+ * @param {number[]} ships - ship cell ids
  * @returns {boolean}
  */
-export function isLuckyFirstScan(scanCount, id, targeted) {
-	return scanCount < 1 && !targeted.includes(id);
+export function isLuckyFirstScan(scanCount, id, targeted, ships) {
+	return scanCount < 1 && ships.includes(id) && !targeted.includes(id);
 }
 
 /**
@@ -91,8 +97,24 @@ export function isLuckyFirstScan(scanCount, id, targeted) {
  * @param {number[]} [existing=[]] - ids to keep
  * @param {() => number} [rng=Math.random] - returns a float in [0, 1)
  * @returns {number[]}
+ * @throws {RangeError} if the request cannot be satisfied
  */
 export function generateUniqueRandomNumbers(count, maxValue, existing = [], rng = Math.random) {
+	// Without this guard the loop below spins forever: asking for more unique
+	// ids than the range contains means `numbers.size` can never reach `count`.
+	// Today's UI caps ships at 5 on a 16-cell board so it is unreachable, but an
+	// unbounded while-loop is not something to leave sitting in the one module
+	// the whole game depends on.
+	if (!Number.isInteger(count) || count < 0) {
+		throw new RangeError(`count must be a non-negative integer, got ${count}`);
+	}
+	if (!Number.isInteger(maxValue) || maxValue < 0) {
+		throw new RangeError(`maxValue must be a non-negative integer, got ${maxValue}`);
+	}
+	if (count > maxValue) {
+		throw new RangeError(`cannot pick ${count} unique ids from a range of ${maxValue}`);
+	}
+
 	const numbers = new Set(existing);
 	while (numbers.size < count) {
 		numbers.add(Math.floor(rng() * maxValue) + 1);

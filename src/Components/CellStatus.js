@@ -14,9 +14,11 @@ const STYLES = {
 };
 
 // Resolve a status (plus the board's default background) to actual colors.
+// An unrecognised status falls back to the hidden style rather than returning
+// undefined — Square destructures this result, so undefined would throw and
+// take the whole board down over a typo'd status string.
 export function statusStyle(status, fieldBg) {
-	if (!status || status === CELL.HIDDEN) {
-		return { bg: fieldBg, fontColor: 'black' };
-	}
-	return STYLES[status];
+	const hidden = { bg: fieldBg, fontColor: 'black' };
+	if (!status || status === CELL.HIDDEN) return hidden;
+	return STYLES[status] ?? hidden;
 }

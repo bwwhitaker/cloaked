@@ -7,17 +7,23 @@ import './GameSpace.css';
 import { lightBlue } from '@mui/material/colors';
 import { generateUniqueRandomNumbers } from './GameLogic';
 
+const INITIAL_FIELD_BG = 'rgba(255,255,255,.1)';
+const STREAK_STORAGE_KEY = 'successfulStreakCount';
+
 function GameSpace() {
 	const [readyToPlay, setReadyToPlay] = useState(false);
 	const [axis, setAxis] = useState(6);
-	let maxValue = axis * axis;
+	const maxValue = axis * axis;
 	const [successfulStreakCount, setSuccessfulStreakCount] = useState(0);
 	const [ships, setShip] = useState(2);
-	const [fieldBg, setFieldBg] = useState('rgba(255,255,255,.1)');
+	const [fieldBg, setFieldBg] = useState(INITIAL_FIELD_BG);
 	const [shipLocations, setShipLocations] = useState([]);
 	const [openInstructions, setOpenInstructions] = useState(false);
+	// One piece of state, not two. The label is derived, so the button caption
+	// and the behaviour cannot drift apart — the same fix already applied to the
+	// Scan/Target/Unlock buttons in SearchGrid.
 	const [diagonalMode, setDiagonalMode] = useState(false);
-	const [diagonalModeStatus, setDiagonalModeStatus] = useState('Off');
+	const diagonalModeStatus = diagonalMode ? 'On' : 'Off';
 	const axisMarks = [
 		{
 			value: 4,
@@ -72,26 +78,28 @@ function GameSpace() {
 	};
 
 	const handleGenerateClick = () => {
-		const newShipLocations = generateUniqueRandomNumbers(ships, maxValue, shipLocations);
-		setShipLocations(newShipLocations);
+		// Deliberately does NOT seed with the previous game's ships. Passing them
+		// as `existing` meant that when the count was unchanged the set was already
+		// full and the function returned the OLD positions untouched — every replay
+		// hid the ships in exactly the same cells.
+		setShipLocations(generateUniqueRandomNumbers(ships, maxValue));
 	};
 
 	useEffect(() => {
-		// Retrieve the streak count from local storage or initialize it if not present
-		const storedCount = localStorage.getItem('successfulStreakCount');
-		if (storedCount !== null) {
-			/* console.log('Retrieved from local storage:', storedCount); */
-			setSuccessfulStreakCount(parseInt(storedCount, 10));
+		// Anything can end up in localStorage — a half-written value, an older
+		// format, a user poking at devtools. parseInt('') is NaN, and NaN rendered
+		// straight into "Streak Count:" is a permanently broken display with no way
+		// back, so fall back to 0 rather than trusting what we read.
+		const stored = Number.parseInt(localStorage.getItem(STREAK_STORAGE_KEY), 10);
+		if (Number.isInteger(stored) && stored >= 0) {
+			setSuccessfulStreakCount(stored);
 		}
 	}, []);
 
 	useEffect(() => {
 		// Update local storage whenever successfulStreakCount changes
 		const timer = setTimeout(() => {
-			if (successfulStreakCount !== null && successfulStreakCount >= 0) {
-				/* console.log('Updating local storage to:', successfulStreakCount); */
-				localStorage.setItem('successfulStreakCount', successfulStreakCount);
-			}
+			localStorage.setItem(STREAK_STORAGE_KEY, String(successfulStreakCount));
 		}, 100);
 
 		return () => clearTimeout(timer);
@@ -152,10 +160,7 @@ function GameSpace() {
 							<Button
 								variant='text'
 								color='primary'
-								onClick={() => {
-									setDiagonalMode(!diagonalMode);
-									setDiagonalModeStatus(diagonalModeStatus === 'Off' ? 'On' : 'Off');
-								}}
+								onClick={() => setDiagonalMode((prev) => !prev)}
 							>
 								{diagonalModeStatus}
 							</Button>
@@ -166,8 +171,7 @@ function GameSpace() {
 					<Button
 						variant='outlined'
 						onClick={() => {
-							setReadyToPlay(!readyToPlay);
-							setShipLocations([]);
+							setReadyToPlay(true);
 							handleGenerateClick();
 						}}
 					>
@@ -188,8 +192,11 @@ function GameSpace() {
 									},
 								}}
 								onClick={() => {
-									setReadyToPlay(!readyToPlay);
-									setFieldBg('white');
+									setReadyToPlay(false);
+									// Was setFieldBg('white'), which had no route back — one
+									// reset changed the board background for the rest of the
+									// session. Restore the starting value instead.
+									setFieldBg(INITIAL_FIELD_BG);
 									setShipLocations([]);
 								}}
 							>

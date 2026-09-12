@@ -116,7 +116,7 @@ function SearchGrid(props) {
 		setStatus(id, CELL.SHIP, REVEAL_DELAY);
 		// "Lucky" only on the very first scan of a cell that wasn't targeted.
 		// scanCount is still the pre-increment value within this render pass.
-		const lucky = isLuckyFirstScan(scanCount, id, targeted);
+		const lucky = isLuckyFirstScan(scanCount, id, targeted, shipsToPass);
 		if (isInArray(id, targeted)) removeTargeted(id);
 		if (!lucky) clearStreak();
 		schedule(() => {

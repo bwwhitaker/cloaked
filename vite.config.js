@@ -17,7 +17,8 @@ export default defineConfig({
 	},
 
 	build: {
-		// Keep CRA's output folder name so `gh-pages -d build` still works.
+		// The Pages workflow uploads ./build as its artifact — keep the two in
+		// step if this ever changes.
 		outDir: 'build',
 	},
 

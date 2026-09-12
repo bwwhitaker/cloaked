@@ -100,16 +100,26 @@ describe('isWin', () => {
 });
 
 describe('isLuckyFirstScan', () => {
-	test('is lucky on the first scan of an untargeted cell', () => {
-		expect(isLuckyFirstScan(0, 10, [])).toBe(true);
+	const ships = [10, 22];
+
+	test('is lucky on the first scan of an untargeted ship cell', () => {
+		expect(isLuckyFirstScan(0, 10, [], ships)).toBe(true);
 	});
 
 	test('is not lucky if the cell was already targeted', () => {
-		expect(isLuckyFirstScan(0, 10, [10])).toBe(false);
+		expect(isLuckyFirstScan(0, 10, [10], ships)).toBe(false);
 	});
 
 	test('is not lucky after the first scan', () => {
-		expect(isLuckyFirstScan(1, 10, [])).toBe(false);
+		expect(isLuckyFirstScan(1, 10, [], ships)).toBe(false);
+	});
+
+	test('is not lucky when the first scan misses every ship', () => {
+		// Previously unprovable: the function never looked at ships, so an empty
+		// water cell on turn one reported "lucky" and only the caller's own
+		// branch kept the streak safe.
+		expect(isLuckyFirstScan(0, 11, [], ships)).toBe(false);
+		expect(isLuckyFirstScan(0, 11, [], [])).toBe(false);
 	});
 });
 
@@ -148,5 +158,32 @@ describe('generateUniqueRandomNumbers', () => {
 
 	test('returns existing ids untouched when count is already satisfied', () => {
 		expect(generateUniqueRandomNumbers(2, 36, [4, 9])).toEqual([4, 9]);
+	});
+
+	// --- unsatisfiable requests --------------------------------------------
+	// Each of these used to hang the process instead of failing.
+
+	test('throws rather than looping forever when count exceeds the range', () => {
+		expect(() => generateUniqueRandomNumbers(10, 9)).toThrow(RangeError);
+		expect(() => generateUniqueRandomNumbers(1, 0)).toThrow(RangeError);
+	});
+
+	test('throws on a non-integer or negative count', () => {
+		expect(() => generateUniqueRandomNumbers(2.5, 36)).toThrow(RangeError);
+		expect(() => generateUniqueRandomNumbers(-1, 36)).toThrow(RangeError);
+	});
+
+	test('throws on a non-integer or negative maxValue', () => {
+		expect(() => generateUniqueRandomNumbers(2, 3.5)).toThrow(RangeError);
+		expect(() => generateUniqueRandomNumbers(2, -5)).toThrow(RangeError);
+	});
+
+	test('allows the exact-fit case where count equals the range', () => {
+		const result = generateUniqueRandomNumbers(4, 4);
+		expect(result.sort((a, b) => a - b)).toEqual([1, 2, 3, 4]);
+	});
+
+	test('handles a zero-count request', () => {
+		expect(generateUniqueRandomNumbers(0, 36)).toEqual([]);
 	});
 });
