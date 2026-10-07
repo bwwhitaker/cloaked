@@ -1,4 +1,4 @@
-import { isAdjacentToShip, isWin, isLuckyFirstScan, generateUniqueRandomNumbers } from './GameLogic';
+import { isAdjacentToShip, isWin, isLuckyFirstScan, generateUniqueRandomNumbers, cellName } from './GameLogic';
 
 // A deterministic stand-in for Math.random: returns the supplied values in
 // order, then repeats the last one. Lets us pin down "random" placement.
@@ -185,5 +185,14 @@ describe('generateUniqueRandomNumbers', () => {
 
 	test('handles a zero-count request', () => {
 		expect(generateUniqueRandomNumbers(0, 36)).toEqual([]);
+	});
+});
+
+describe('cellName', () => {
+	test('names a cell by row and column', () => {
+		expect(cellName(1, 4)).toBe('row 1, column 1');
+		expect(cellName(4, 4)).toBe('row 1, column 4');
+		expect(cellName(5, 4)).toBe('row 2, column 1');
+		expect(cellName(16, 4)).toBe('row 4, column 4');
 	});
 });

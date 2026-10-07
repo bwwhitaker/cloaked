@@ -42,12 +42,13 @@ function setup(overrides = {}) {
 	return { props, user };
 }
 
-// The board renders each cell's id as its label, so a bare getByText('6')
-// would also match the "There are 6 cloaked ships" copy on other configs.
-// Scope every lookup to the grid.
+// Cells are buttons named by position ("row 2, column 2, not scanned"), not by
+// a visible number. The test board is 4 wide.
 function cell(id) {
+	const row = Math.ceil(id / 4);
+	const col = ((id - 1) % 4) + 1;
 	const grid = document.querySelector('.GridSpacing');
-	return within(grid).getByText(String(id));
+	return within(grid).getByRole('button', { name: new RegExp(`^row ${row}, column ${col},`) });
 }
 
 // Reveals are deferred by REVEAL_DELAY, and MUI's Snackbar runs its own
@@ -67,7 +68,7 @@ async function clickCell(user, id) {
 }
 
 async function chooseMode(user, mode) {
-	await user.click(screen.getByRole('button', { name: mode }));
+	await user.click(screen.getByRole('radio', { name: mode }));
 	await settle(0);
 }
 
@@ -84,9 +85,9 @@ describe('board rendering', () => {
 	test('renders one cell per square of the board', () => {
 		setup({ axis: 4 });
 		const grid = document.querySelector('.GridSpacing');
-		expect(within(grid).getByText('1')).toBeInTheDocument();
-		expect(within(grid).getByText('16')).toBeInTheDocument();
-		expect(within(grid).queryByText('17')).not.toBeInTheDocument();
+		expect(within(grid).getAllByRole('button')).toHaveLength(16);
+		expect(within(grid).getByRole('button', { name: /^row 4, column 4,/ })).toBeInTheDocument();
+		expect(within(grid).queryByRole('button', { name: /^row 5,/ })).not.toBeInTheDocument();
 	});
 
 	test('pluralises the ship count message', () => {
@@ -134,18 +135,27 @@ describe('scan mode', () => {
 		await clickCell(user, 6); // now hit the ship
 
 		expect(await screen.findByText(/game over!/i)).toBeInTheDocument();
-		expect(screen.getByText(/the ship was in cell: 6/i)).toBeInTheDocument();
+		// The loss is shown on the board, not spelled out in the message.
+		expect(cell(6)).toHaveAccessibleName('row 2, column 2, ship found');
+		expect(screen.getByRole('status')).toHaveTextContent('Ship was at row 2, column 2.');
 		expect(props.resetSuccessfulStreakCount).toHaveBeenCalled();
 	});
 
-	test('lists every ship cell in the game-over message when there are several', async () => {
+	test('reveals every ship on the board when you lose with several', async () => {
 		const { user } = setup({ ships: 3, shipLocations: [14, 6, 9] });
 
 		await clickCell(user, 16);
 		await clickCell(user, 9);
 
+		expect(await screen.findByText(/game over!/i)).toBeInTheDocument();
+		// Every ship is revealed on the board, including ones never scanned.
+		for (const id of [6, 9, 14]) {
+			expect(cell(id)).toHaveAccessibleName(/ship found$/);
+		}
 		// Sorted for readability regardless of generation order.
-		expect(await screen.findByText(/ships were in cells: 6, 9, 14/i)).toBeInTheDocument();
+		expect(screen.getByRole('status')).toHaveTextContent(
+			'Ships were at row 2, column 2; row 3, column 1; row 4, column 2.',
+		);
 	});
 
 	test('a scan does not end the game when it misses', async () => {
@@ -247,6 +257,18 @@ describe('firing', () => {
 		expect(props.setSuccessfulStreakCount).not.toHaveBeenCalled();
 	});
 
+	test('a losing shot reveals the ships on the board', async () => {
+		const { user } = setup({ ships: 2, shipLocations: [6, 11] });
+
+		await chooseMode(user, 'Target');
+		await clickCell(user, 6); // incomplete
+
+		await fire(user);
+
+		expect(await screen.findByText(/the cloaked ships have been revealed/i)).toBeInTheDocument();
+		expect(cell(11)).toHaveAccessibleName('row 3, column 3, ship found');
+	});
+
 	test('firing with nothing targeted loses', async () => {
 		const { props, user } = setup();
 
@@ -301,5 +323,67 @@ describe('resetting', () => {
 
 		expect(errors).toHaveLength(0);
 		spy.mockRestore();
+	});
+});
+
+describe('keyboard and screen reader access', () => {
+	test('cells are real buttons with a position and state in their name', () => {
+		setup();
+		expect(cell(6)).toHaveAccessibleName('row 2, column 2, not scanned');
+	});
+
+	test('focus starts on the Scan mode, one Tab from the grid', async () => {
+		const { user } = setup();
+		expect(screen.getByRole('radio', { name: 'Scan' })).toHaveFocus();
+
+		await user.tab(); // the three modes are one Tab stop
+		expect(cell(1)).toHaveFocus();
+	});
+
+	test('only one cell is a tab stop, and arrow keys move between cells', async () => {
+		const { user } = setup();
+		const grid = document.querySelector('.GridSpacing');
+		const tabStops = within(grid)
+			.getAllByRole('button')
+			.filter((b) => b.tabIndex === 0);
+		expect(tabStops).toHaveLength(1);
+
+		cell(1).focus();
+		await user.keyboard('{ArrowRight}');
+		expect(cell(2)).toHaveFocus();
+		await user.keyboard('{ArrowDown}');
+		expect(cell(6)).toHaveFocus();
+		await user.keyboard('{ArrowLeft}{ArrowLeft}'); // second is stopped at the edge
+		expect(cell(5)).toHaveFocus();
+	});
+
+	test('Enter scans the focused cell and the result is announced', async () => {
+		const { user } = setup();
+		cell(16).focus();
+		await user.keyboard('{Enter}');
+		await settle();
+
+		expect(screen.getByRole('status')).toHaveTextContent('row 4, column 4: scanned, clear');
+		expect(cell(16)).toHaveAccessibleName('row 4, column 4, scanned, clear');
+	});
+
+	test('modes are a radio group that reports the selected mode', async () => {
+		const { user } = setup();
+		expect(screen.getByRole('radiogroup', { name: /mode/i })).toBeInTheDocument();
+		expect(screen.getByRole('radio', { name: 'Scan' })).toBeChecked();
+		await chooseMode(user, 'Target');
+		expect(screen.getByRole('radio', { name: 'Target' })).toBeChecked();
+		expect(screen.getByRole('radio', { name: 'Scan' })).not.toBeChecked();
+	});
+
+	test('arrow keys move between modes and select as they go', async () => {
+		const { user } = setup();
+		await user.keyboard('{ArrowRight}');
+		expect(screen.getByRole('radio', { name: 'Target' })).toBeChecked();
+		expect(screen.getByRole('radio', { name: 'Target' })).toHaveFocus();
+		await user.keyboard('{ArrowRight}{ArrowRight}'); // wraps past Unlock to Scan
+		expect(screen.getByRole('radio', { name: 'Scan' })).toBeChecked();
+		await user.keyboard('{ArrowLeft}'); // wraps back to Unlock
+		expect(screen.getByRole('radio', { name: 'Unlock' })).toBeChecked();
 	});
 });

@@ -25,7 +25,7 @@ function begin(user) {
 // and rely on SearchGrid's own message for the ship count.
 function boardCellCount() {
 	const grid = document.querySelector('.GridSpacing');
-	return grid ? grid.querySelectorAll('.MuiPaper-root').length : 0;
+	return grid ? grid.querySelectorAll('[data-cell-id]').length : 0;
 }
 
 beforeEach(() => {
@@ -175,14 +175,14 @@ describe('resetting a round', () => {
 
 		await begin(user);
 		const firstGrid = document.querySelector('.GridSpacing');
-		const firstCell = within(firstGrid).getByText('1').className;
+		const firstCell = within(firstGrid).getByRole('button', { name: /^row 1, column 1,/ }).className;
 
 		await user.click(screen.getByRole('button', { name: /reset game/i }));
 		await settle(0);
 		await begin(user);
 
 		const secondGrid = document.querySelector('.GridSpacing');
-		const secondCell = within(secondGrid).getByText('1').className;
+		const secondCell = within(secondGrid).getByRole('button', { name: /^row 1, column 1,/ }).className;
 
 		expect(secondCell).toBe(firstCell);
 	});

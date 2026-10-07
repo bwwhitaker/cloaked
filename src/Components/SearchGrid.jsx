@@ -5,7 +5,7 @@ import { styled } from '@mui/material/styles';
 import { CELL } from './CellStatus';
 import './GameSpace.css';
 import { CELL_SIZE, REVEAL_DELAY } from './Constants';
-import { isAdjacentToShip, isWin, isLuckyFirstScan } from './GameLogic';
+import { isAdjacentToShip, isWin, isLuckyFirstScan, cellName } from './GameLogic';
 
 const ModeButton = styled(Button)({
 	textAlign: 'center',
@@ -43,6 +43,10 @@ function SearchGrid(props) {
 	const [clickMode, setClickMode] = useState('Scan');
 	const [cellStatus, setCellStatus] = useState({}); // { [id]: CELL.* }
 	const [scanningId, setScanningId] = useState(null);
+	// Roving tabindex: only one cell is a Tab stop, arrow keys move within the grid.
+	const [activeId, setActiveId] = useState(1);
+	// Spoken (visually hidden) result of the last action.
+	const [announcement, setAnnouncement] = useState('');
 	const [scanDialog, setScanDialog] = useState({
 		open: false,
 		severity: 'error',
@@ -71,8 +75,48 @@ function SearchGrid(props) {
 
 	const isInArray = (value, array) => array.includes(value);
 
+	const ANNOUNCE = {
+		[CELL.TARGETED]: 'targeted',
+		[CELL.ADJACENT]: 'scanned, ship adjacent',
+		[CELL.CLEAR]: 'scanned, clear',
+		[CELL.SHIP]: 'ship found',
+		[CELL.HIDDEN]: 'unlocked',
+	};
+
 	const setStatus = (id, status, delay = 0) => {
-		schedule(() => setCellStatus((prev) => ({ ...prev, [id]: status })), delay);
+		schedule(() => {
+			setCellStatus((prev) => ({ ...prev, [id]: status }));
+			setAnnouncement(`${cellName(id, axisX)}: ${ANNOUNCE[status]}`);
+		}, delay);
+	};
+
+	const focusCell = (id) => {
+		setActiveId(id);
+		document.querySelector(`[data-cell-id="${id}"]`)?.focus();
+	};
+
+	const handleModeKeyDown = (e) => {
+		const step = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 }[e.key];
+		if (!step) return;
+		e.preventDefault();
+		const next = MODES[(MODES.indexOf(clickMode) + step + MODES.length) % MODES.length];
+		setClickMode(next);
+		document.querySelector(`[data-mode="${next}"]`)?.focus();
+	};
+
+	const handleGridKeyDown = (e) => {
+		const moves = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -axisX, ArrowDown: axisX };
+		let next = activeId;
+		if (e.key in moves) {
+			const col = (activeId - 1) % axisX;
+			if (e.key === 'ArrowLeft' && col === 0) return;
+			if (e.key === 'ArrowRight' && col === axisX - 1) return;
+			next = activeId + moves[e.key];
+		} else if (e.key === 'Home') next = activeId - ((activeId - 1) % axisX);
+		else if (e.key === 'End') next = activeId + (axisX - 1 - ((activeId - 1) % axisX));
+		else return;
+		e.preventDefault();
+		if (next >= 1 && next <= gridSize) focusCell(next);
 	};
 
 	const showScanning = (id) => {
@@ -98,12 +142,21 @@ function SearchGrid(props) {
 		props.setShipLocations([]);
 	};
 
-	const shipCells = () => [...shipsToPass].sort((a, b) => a - b).join(', ');
+	const shipCells = () =>
+		[...shipsToPass]
+			.sort((a, b) => a - b)
+			.map((id) => cellName(id, axisX))
+			.join('; ');
 
-	const gameOverMsg = () =>
-		shipsToPass.length === 1
-			? `Your scans alerted the enemy and they fired first. The ship was in cell: ${shipCells()}`
-			: `Your scans alerted the enemy and they fired first. Ships were in cells: ${shipCells()}`;
+	const gameOverMsg = () => 'Your scans alerted the enemy and they fired first.';
+
+	// On a loss, show where the ships were on the board itself. The grid shows
+	// it to sighted players; the live region carries the same positions for
+	// screen reader users, who can't see the highlighted cells.
+	const revealAllShips = () => {
+		setCellStatus((prev) => ({ ...prev, ...Object.fromEntries(shipsToPass.map((id) => [id, CELL.SHIP])) }));
+		setAnnouncement(`${shipsToPass.length === 1 ? 'Ship was' : 'Ships were'} at ${shipCells()}.`);
+	};
 
 	// --- Per-mode click handlers -------------------------------------------
 	// handleSquareClick dispatches on the current mode. Each mode owns its own
@@ -120,6 +173,7 @@ function SearchGrid(props) {
 		if (isInArray(id, targeted)) removeTargeted(id);
 		if (!lucky) clearStreak();
 		schedule(() => {
+			if (!lucky) revealAllShips();
 			setScanDialog(
 				lucky
 					? {
@@ -190,14 +244,12 @@ function SearchGrid(props) {
 			props.setSuccessfulStreakCount();
 			resetScanCount();
 		} else {
-			const hiddenShips = shipCells();
+			revealAllShips();
 			setFireSnackbarOpen(true);
 			setFireSnackbarColor('error');
 			setSnackbarTitle('Game Over!');
 			setSnackbarMessage1(`Your scans were not accurate. They fired back and destroyed your ship.`);
-			setSnackbarMessage2(
-				ships === 1 ? `The ship was in cell: ${hiddenShips}.` : `Ships were in cells: ${hiddenShips}.`,
-			);
+			setSnackbarMessage2(ships === 1 ? 'The cloaked ship has been revealed.' : 'The cloaked ships have been revealed.');
 			clearStreak();
 			resetScanCount();
 		}
@@ -208,26 +260,41 @@ function SearchGrid(props) {
 			<div className='CenterAligning'>
 				<div className='GameSpaceVertical'>{message}</div>
 				<div className='DiagonalModeMessage'>Diagonal Scannning Mode is {diagonalModeStatus}.</div>
-				<div className='GameSpaceVertical'>
-					Mode:
+				<div className='GameSpaceVertical' role='radiogroup' aria-labelledby='mode-label'>
+					<span id='mode-label'>Mode:</span>
 					{MODES.map((mode) => (
 						<ModeButton
 							key={mode}
+							role='radio'
+							aria-checked={clickMode === mode}
+							data-mode={mode}
 							variant='outlined'
 							sx={clickMode === mode ? ACTIVE_MODE_STYLE[mode] : INACTIVE_MODE_STYLE}
+							// Radio group keyboard model: the selected mode is the only Tab
+							// stop and arrow keys move between modes, so Tab goes straight on
+							// to the grid.
+							tabIndex={clickMode === mode ? 0 : -1}
+							// The board only mounts when a game starts. Landing on Scan means
+							// keyboard and screen reader users skip Reset Game and Instructions
+							// and hear the current mode.
+							autoFocus={mode === 'Scan'}
 							onClick={() => setClickMode(mode)}
+							onKeyDown={handleModeKeyDown}
 						>
 							{mode}
 						</ModeButton>
 					))}
 				</div>
-				<div className='GridSpacing'>
+				<div className='GridSpacing' role='group' aria-label='Scan grid' onKeyDown={handleGridKeyDown}>
 					<Grid width={width} container justifyContent={'center'} spacing={0} columns={gridSize}>
 						{gridKeys.map((key) => (
 							<Grid item xs={axisX} key={key}>
 								<Square
 									key={key}
-									title={key}
+									id={key}
+									name={cellName(key, axisX)}
+									focusable={activeId === key}
+									onFocusCell={setActiveId}
 									bg={bg}
 									status={cellStatus[key]}
 									scanning={scanningId === key}
@@ -237,6 +304,9 @@ function SearchGrid(props) {
 						))}
 					</Grid>
 				</div>
+			</div>
+			<div className='visually-hidden' role='status' aria-live='polite'>
+				{announcement}
 			</div>
 			<div className='GameSpaceVertical'>
 				<Button variant='contained' color='error' onClick={() => Fire()}>

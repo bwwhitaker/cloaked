@@ -121,3 +121,14 @@ export function generateUniqueRandomNumbers(count, maxValue, existing = [], rng 
 	}
 	return Array.from(numbers);
 }
+
+/**
+ * Human-readable position of a cell, e.g. id 9 on a 4-wide board is
+ * "row 3, column 1". Used for screen-reader labels and for the end-of-game
+ * messages, so players never need a visible cell number.
+ */
+export function cellName(id, axis) {
+	const row = Math.ceil(id / axis);
+	const column = ((id - 1) % axis) + 1;
+	return `row ${row}, column ${column}`;
+}
