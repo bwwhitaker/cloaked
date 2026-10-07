@@ -387,3 +387,27 @@ describe('keyboard and screen reader access', () => {
 		expect(screen.getByRole('radio', { name: 'Unlock' })).toBeChecked();
 	});
 });
+
+describe('state icons', () => {
+	test('each state draws an icon so colour is not the only cue', async () => {
+		const { user } = setup({ ships: 1, shipLocations: [6] });
+
+		expect(cell(16).querySelector('svg')).toBeNull(); // unscanned: blank
+
+		await clickCell(user, 16); // clear
+		expect(cell(16).querySelector('svg')).toBeInTheDocument();
+
+		await clickCell(user, 2); // adjacent to the ship at 6
+		expect(cell(2).querySelector('svg')).toBeInTheDocument();
+
+		await chooseMode(user, 'Target');
+		await clickCell(user, 11);
+		expect(cell(11).querySelector('svg')).toBeInTheDocument();
+	});
+
+	test('icons are hidden from assistive technology', async () => {
+		const { user } = setup();
+		await clickCell(user, 16);
+		expect(cell(16).querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+	});
+});

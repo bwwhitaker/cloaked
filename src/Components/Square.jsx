@@ -1,5 +1,6 @@
 import React from 'react';
 import { ButtonBase } from '@mui/material';
+import { Crosshair, Siren, Dot, Rocket } from 'lucide-react';
 import { styled } from '@mui/material/styles';
 import Scanning from './Scanning';
 import { statusStyle } from './CellStatus';
@@ -29,9 +30,24 @@ const STATE_LABEL = {
 	ship: 'ship found',
 };
 
+// A glyph per state so colour is never the only cue. Icons inherit the cell's
+// text colour (currentColor) and are hidden from assistive tech: the state is
+// already in the button's aria-label.
+const STATE_ICON = {
+	targeted: Crosshair,
+	adjacent: Siren,
+	clear: Dot,
+	ship: Rocket,
+};
+
+// Dot is a single point, so it keeps the larger size to stay noticeable.
+const ICON_SIZE = { clear: 26 };
+const DEFAULT_ICON_SIZE = 22;
+
 function Square(props) {
 	const { bg, fontColor } = statusStyle(props.status, props.bg);
 	const state = STATE_LABEL[props.status] ?? STATE_LABEL.hidden;
+	const Icon = STATE_ICON[props.status];
 
 	return (
 		<CellButton
@@ -42,7 +58,7 @@ function Square(props) {
 			onClick={() => props.onSquareClick(props.id)}
 			onFocus={() => props.onFocusCell(props.id)}
 		>
-			{props.scanning ? <Scanning /> : null}
+			{props.scanning ? <Scanning /> : Icon && <Icon size={ICON_SIZE[props.status] ?? DEFAULT_ICON_SIZE} strokeWidth={2} aria-hidden='true' />}
 		</CellButton>
 	);
 }

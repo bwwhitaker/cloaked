@@ -11,12 +11,14 @@ A minesweeper-inspired browser game: hunt down enemy ships hiding behind a cloak
 You're scanning a grid of space for cloaked enemy ships. Every scan risks giving away your position, so you have to find the ships by inference rather than brute force.
 
 1. **Set your parameters.** Choose a grid size (4×4 up to 8×8) and how many ships to hide (1–5). Optionally turn on **Diagonal Mode**, which treats diagonal cells as adjacent too.
-2. **Scan.** In _Scan_ mode, click a cell to reveal it:
-   - **Black** — all clear, no ship next to it.
-   - **Blue** — a ship is adjacent (orthogonally, plus diagonally if Diagonal Mode is on).
-   - **Red** — you scanned directly onto a ship. The enemy fires first and it's game over... unless it was your very first scan, which counts as a _lucky shot_ and spares your streak.
-3. **Target.** In _Target_ mode, mark the cells where you think ships are hiding. _Unlock_ mode clears a mark.
+2. **Scan.** In _Scan_ mode, click a cell (or press Enter/Space on it) to reveal it. Every result has its own color _and_ icon, so color is never the only cue:
+   - **Black, dot** — all clear, no ship next to it.
+   - **Blue, siren** — a ship is adjacent (orthogonally, plus diagonally if Diagonal Mode is on).
+   - **Red, rocket** — you scanned directly onto a ship. The enemy fires first and it's game over... unless it was your very first scan, which counts as a _lucky shot_ and spares your streak.
+3. **Target.** In _Target_ mode, mark the cells where you think ships are hiding (**amber, crosshair**). _Unlock_ mode clears a mark.
 4. **Fire.** When you think you've pinpointed every ship, hit **Fire!**. If your targeted cells exactly match the ship locations, you win and your streak goes up. Miss, and the enemy fires back.
+
+When you lose, every cloaked ship is revealed on the board so you can see where you went wrong.
 
 Your win streak is saved between sessions in `localStorage`.
 
@@ -26,7 +28,22 @@ Your win streak is saved between sessions in `localStorage`.
 - Optional diagonal adjacency mode
 - Persisted win streak across sessions
 - Scan reveal animation and game-over / victory feedback
+- Ships revealed on the board when you lose
+- Playable with the keyboard and a screen reader (see [Accessibility](#accessibility))
 - Mobile-aware layout (prompts to return to portrait orientation)
+
+## Accessibility
+
+The board is fully playable without a mouse:
+
+- **Cells are real buttons**, named by position and state, e.g. "row 2, column 3, scanned, ship adjacent". There are no visible cell numbers.
+- **The grid is a single Tab stop.** Use the arrow keys, Home and End to move around it; Enter or Space acts on the focused cell.
+- **Scan / Target / Unlock is a radio group.** It is one Tab stop; arrow keys change the mode. Tab from the modes goes straight to the grid.
+- **Focus starts on Scan** when a game begins, so you don't have to Tab past Reset Game and Instructions.
+- **Results are announced** through a visually hidden live region (each scan, target and unlock, and the ship positions after a loss).
+- **Color is never the only cue.** Each cell state also has an icon (Lucide), and every icon/fill pair meets 4.5:1 contrast (checked in `CellStatus.test.js`).
+
+The automated tests cover roles, accessible names, focus and the live region. It has not yet been tested with a real screen reader (VoiceOver / NVDA).
 
 ## Tech stack
 
@@ -34,7 +51,8 @@ Your win streak is saved between sessions in `localStorage`.
 - **Vite** for dev server and bundling
 - **Vitest** + **React Testing Library** for tests
 - **MUI (Material UI) 5** with Emotion for styling
-- **GitHub Pages** for hosting (via `gh-pages`)
+- **Lucide** (`lucide-react`) for cell icons
+- **GitHub Pages** for hosting, deployed by GitHub Actions
 
 ## Run locally
 
@@ -52,8 +70,9 @@ npm test           # run tests in watch mode (Vitest)
 npm run test:run   # run the suite once (useful in CI)
 npm run build      # production build into ./build
 npm run preview    # serve the production build locally
-npm run deploy     # build + publish to GitHub Pages
 ```
+
+Deploys happen through GitHub Actions (`.github/workflows/deploy.yml`): tests, then build, then deploy, so a failing test blocks the release. There is no manual deploy script.
 
 ## Tests
 
@@ -64,7 +83,12 @@ The game rules live in a small, framework-free module — `src/Components/GameLo
 - **Ship placement** (`generateUniqueRandomNumbers`): correct count, uniqueness, range, and preservation of existing placements (with an injectable RNG for deterministic tests).
 - **Lucky first scan** (`isLuckyFirstScan`).
 
-`src/App.test.jsx` is a render smoke test for the app shell.
+The rest of the suite covers the UI:
+
+- `CellStatus.test.js` — status-to-style mapping, including that every icon/fill pair meets 4.5:1 contrast.
+- `SearchGrid.test.jsx` — mode routing, scan/target/unlock/fire outcomes, the reveal on a loss, and keyboard and screen reader behavior (single Tab stop, arrow keys, radio-group modes, live-region announcements).
+- `GameSpace.test.jsx` — setup screen, streak persistence and reset behavior.
+- `App.test.jsx` — a render smoke test for the app shell.
 
 ## Project structure
 
@@ -77,13 +101,13 @@ src/
 ├── Components/
 │   ├── GameSpace.jsx           # setup screen, board state, streak persistence
 │   ├── SearchGrid.jsx          # the grid, scan/target/unlock modes, win/lose flow
-│   ├── Square.jsx              # a single cell
+│   ├── Square.jsx              # a single cell: button, label and state icon
 │   ├── Scanning.jsx            # scan animation
 │   ├── InstructionModule.jsx   # how-to-play dialog
 │   ├── CellStatus.js           # cell status enum + status→style mapping
 │   ├── Constants.js            # shared sizing/timing constants
 │   ├── GameLogic.js            # pure game rules (unit-tested)
-│   └── GameLogic.test.js       # game-logic tests
+│   └── *.test.js(x)            # tests live beside the code they cover
 └── ...
 ```
 
@@ -98,7 +122,7 @@ The project was migrated from Create React App (now deprecated) to Vite, which r
 ## Roadmap
 
 - Show a numeric count of adjacent ships per cell (a closer nod to classic Minesweeper)
-- Keyboard navigation and ARIA roles for full accessibility
+- Test with real screen readers (VoiceOver, NVDA) and fix whatever turns up
 - Sound and richer win/lose animations
 
 ## License

@@ -26,13 +26,23 @@ describe('statusStyle', () => {
 	test('each scanned status resolves to its own colour', () => {
 		expect(statusStyle(CELL.CLEAR, FIELD_BG).bg).toBe('black');
 		expect(statusStyle(CELL.ADJACENT, FIELD_BG).bg).toBe('#1976d2');
-		expect(statusStyle(CELL.TARGETED, FIELD_BG).bg).toBe('green');
+		expect(statusStyle(CELL.TARGETED, FIELD_BG).bg).toBe('#ffb300');
 		expect(statusStyle(CELL.SHIP, FIELD_BG).bg).toBe('#d32f2f');
 	});
 
-	test('every scanned status is legible against its background', () => {
+	test('every scanned status meets 4.5:1 contrast between its icon and fill', () => {
+		const luminance = (named) => {
+			const hex = { white: '#ffffff', black: '#000000' }[named] ?? named;
+			const [r, g, b] = [1, 3, 5].map((i) => {
+				const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+				return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+			});
+			return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+		};
 		[CELL.CLEAR, CELL.ADJACENT, CELL.TARGETED, CELL.SHIP].forEach((status) => {
-			expect(statusStyle(status, FIELD_BG).fontColor).toBe('white');
+			const { bg, fontColor } = statusStyle(status, FIELD_BG);
+			const [hi, lo] = [luminance(bg), luminance(fontColor)].sort((a, b) => b - a);
+			expect((hi + 0.05) / (lo + 0.05)).toBeGreaterThanOrEqual(4.5);
 		});
 	});
 

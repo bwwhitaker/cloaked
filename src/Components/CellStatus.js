@@ -7,7 +7,9 @@ export const CELL = {
 };
 
 const STYLES = {
-	[CELL.TARGETED]: { bg: 'green', fontColor: 'white' },
+	// Amber with near-black text: far lighter than the red ship cell, so the two
+	// stay apart for red/green colour-blind players (each also has its own icon).
+	[CELL.TARGETED]: { bg: '#ffb300', fontColor: '#111111' },
 	[CELL.ADJACENT]: { bg: '#1976d2', fontColor: 'white' },
 	[CELL.CLEAR]: { bg: 'black', fontColor: 'white' },
 	[CELL.SHIP]: { bg: '#d32f2f', fontColor: 'white' },

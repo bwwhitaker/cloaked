@@ -22,7 +22,7 @@ const MODES = ['Scan', 'Target', 'Unlock'];
 
 const ACTIVE_MODE_STYLE = {
 	Scan: { backgroundColor: '#1976d2', color: 'white' },
-	Target: { backgroundColor: 'green', color: 'white' },
+	Target: { backgroundColor: '#ffb300', color: '#111111' },
 	Unlock: { backgroundColor: 'white', color: 'black' },
 };
 
