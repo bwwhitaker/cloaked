@@ -28,6 +28,7 @@ describe('statusStyle', () => {
 		expect(statusStyle(CELL.ADJACENT, FIELD_BG).bg).toBe('#1976d2');
 		expect(statusStyle(CELL.TARGETED, FIELD_BG).bg).toBe('#ffb300');
 		expect(statusStyle(CELL.SHIP, FIELD_BG).bg).toBe('#d32f2f');
+		expect(statusStyle(CELL.DESTROYED, FIELD_BG).bg).toBe('#2e7d32');
 	});
 
 	test('every scanned status meets 4.5:1 contrast between its icon and fill', () => {
@@ -39,7 +40,7 @@ describe('statusStyle', () => {
 			});
 			return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 		};
-		[CELL.CLEAR, CELL.ADJACENT, CELL.TARGETED, CELL.SHIP].forEach((status) => {
+		[CELL.CLEAR, CELL.ADJACENT, CELL.TARGETED, CELL.SHIP, CELL.DESTROYED].forEach((status) => {
 			const { bg, fontColor } = statusStyle(status, FIELD_BG);
 			const [hi, lo] = [luminance(bg), luminance(fontColor)].sort((a, b) => b - a);
 			expect((hi + 0.05) / (lo + 0.05)).toBeGreaterThanOrEqual(4.5);

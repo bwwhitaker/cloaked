@@ -4,6 +4,7 @@ export const CELL = {
 	ADJACENT: 'adjacent', // scanned, a ship is next to it
 	CLEAR: 'clear', // scanned, nothing nearby
 	SHIP: 'ship', // scanned directly onto a ship
+	DESTROYED: 'destroyed', // a ship you found and destroyed by winning
 };
 
 const STYLES = {
@@ -13,6 +14,8 @@ const STYLES = {
 	[CELL.ADJACENT]: { bg: '#1976d2', fontColor: 'white' },
 	[CELL.CLEAR]: { bg: 'black', fontColor: 'white' },
 	[CELL.SHIP]: { bg: '#d32f2f', fontColor: 'white' },
+	// Same green as the "You Win!" banner (MUI success.main).
+	[CELL.DESTROYED]: { bg: '#2e7d32', fontColor: 'white' },
 };
 
 // Resolve a status (plus the board's default background) to actual colors.

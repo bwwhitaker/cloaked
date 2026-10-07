@@ -227,6 +227,10 @@ describe('firing', () => {
 
 		expect(await screen.findByText(/you win!/i)).toBeInTheDocument();
 		expect(screen.getByText(/found and destroyed all of the ships/i)).toBeInTheDocument();
+		// The destroyed ships show a shield-off icon and say so in their name.
+		expect(cell(6)).toHaveAccessibleName('row 2, column 2, ship destroyed');
+		expect(cell(6).querySelector('svg')).toBeInTheDocument();
+		expect(screen.getByRole('status')).toHaveTextContent('Ships destroyed at row 2, column 2; row 3, column 3.');
 		expect(props.setSuccessfulStreakCount).toHaveBeenCalledTimes(1);
 		expect(props.resetSuccessfulStreakCount).not.toHaveBeenCalled();
 	});

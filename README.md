@@ -16,9 +16,9 @@ You're scanning a grid of space for cloaked enemy ships. Every scan risks giving
    - **Blue, siren** — a ship is adjacent (orthogonally, plus diagonally if Diagonal Mode is on).
    - **Red, rocket** — you scanned directly onto a ship. The enemy fires first and it's game over... unless it was your very first scan, which counts as a _lucky shot_ and spares your streak.
 3. **Target.** In _Target_ mode, mark the cells where you think ships are hiding (**amber, crosshair**). _Unlock_ mode clears a mark.
-4. **Fire.** When you think you've pinpointed every ship, hit **Fire!**. If your targeted cells exactly match the ship locations, you win and your streak goes up. Miss, and the enemy fires back.
+4. **Fire.** When you think you've pinpointed every ship, hit **Fire!**. If your targeted cells exactly match the ship locations, you win and your streak goes up, and each ship you found turns **green with a shield-off icon over a rocket** (its cloak is down). Miss, and the enemy fires back.
 
-When you lose, every cloaked ship is revealed on the board so you can see where you went wrong.
+When you lose, every cloaked ship is revealed on the board (red, rocket) so you can see where you went wrong.
 
 Your win streak is saved between sessions in `localStorage`.
 
@@ -28,7 +28,7 @@ Your win streak is saved between sessions in `localStorage`.
 - Optional diagonal adjacency mode
 - Persisted win streak across sessions
 - Scan reveal animation and game-over / victory feedback
-- Ships revealed on the board when you lose
+- Ships revealed on the board when you lose, and shown with their cloaks down when you win
 - Playable with the keyboard and a screen reader (see [Accessibility](#accessibility))
 - Mobile-aware layout (prompts to return to portrait orientation)
 
@@ -40,8 +40,8 @@ The board is fully playable without a mouse:
 - **The grid is a single Tab stop.** Use the arrow keys, Home and End to move around it; Enter or Space acts on the focused cell.
 - **Scan / Target / Unlock is a radio group.** It is one Tab stop; arrow keys change the mode. Tab from the modes goes straight to the grid.
 - **Focus starts on Scan** when a game begins, so you don't have to Tab past Reset Game and Instructions.
-- **Results are announced** through a visually hidden live region (each scan, target and unlock, and the ship positions after a loss).
-- **Color is never the only cue.** Each cell state also has an icon (Lucide), and every icon/fill pair meets 4.5:1 contrast (checked in `CellStatus.test.js`).
+- **Results are announced** through a visually hidden live region (each scan, target and unlock, and the ship positions after a win or a loss).
+- **Color is never the only cue.** Each cell state also has an icon (Lucide): crosshair, siren, dot, rocket, and a shield-off over a rocket for a destroyed ship. Every icon/fill pair meets 4.5:1 contrast (checked in `CellStatus.test.js`).
 
 The automated tests cover roles, accessible names, focus and the live region. It has not yet been tested with a real screen reader (VoiceOver / NVDA).
 

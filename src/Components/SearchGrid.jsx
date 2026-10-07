@@ -80,6 +80,7 @@ function SearchGrid(props) {
 		[CELL.ADJACENT]: 'scanned, ship adjacent',
 		[CELL.CLEAR]: 'scanned, clear',
 		[CELL.SHIP]: 'ship found',
+		[CELL.DESTROYED]: 'ship destroyed',
 		[CELL.HIDDEN]: 'unlocked',
 	};
 
@@ -236,6 +237,9 @@ function SearchGrid(props) {
 
 	function Fire() {
 		if (isWin(shipsToPass, targeted)) {
+			// Every targeted cell is a ship, so show their cloaks coming down.
+			setCellStatus((prev) => ({ ...prev, ...Object.fromEntries(shipsToPass.map((id) => [id, CELL.DESTROYED])) }));
+			setAnnouncement(`${shipsToPass.length === 1 ? 'Ship' : 'Ships'} destroyed at ${shipCells()}.`);
 			setFireSnackbarOpen(true);
 			setSnackbarMessage1('You found and destroyed all of the ships!');
 			setSnackbarMessage2('');
