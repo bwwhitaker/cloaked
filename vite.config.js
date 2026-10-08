@@ -8,11 +8,12 @@ export default defineConfig({
 
 	// The app is served from a subpath on GitHub Pages
 	// (https://bwwhitaker.github.io/cloaked/), so assets must resolve relative
-	// to /cloaked/ in production. Dev still serves from /.
+	// to /cloaked/ in production. Dev uses the same base, so visit
+	// http://localhost:3005/cloaked/.
 	base: '/cloaked/',
 
 	server: {
-		port: 3000,
+		port: 3005,
 		open: true,
 	},
 

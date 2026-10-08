@@ -141,6 +141,20 @@ describe('scan mode', () => {
 		expect(props.resetSuccessfulStreakCount).toHaveBeenCalled();
 	});
 
+	test('the game-over message is singular for one ship', async () => {
+		const { user } = setup();
+		await clickCell(user, 16);
+		await clickCell(user, 6);
+		expect(await screen.findByText('Your scans alerted the cloaked ship and it fired first.')).toBeInTheDocument();
+	});
+
+	test('the game-over message is plural for several ships', async () => {
+		const { user } = setup({ ships: 2, shipLocations: [6, 9] });
+		await clickCell(user, 16);
+		await clickCell(user, 9);
+		expect(await screen.findByText('Your scans alerted the cloaked ships and they fired first.')).toBeInTheDocument();
+	});
+
 	test('reveals every ship on the board when you lose with several', async () => {
 		const { user } = setup({ ships: 3, shipLocations: [14, 6, 9] });
 
@@ -226,13 +240,23 @@ describe('firing', () => {
 		await fire(user);
 
 		expect(await screen.findByText(/you win!/i)).toBeInTheDocument();
-		expect(screen.getByText(/found and destroyed all of the ships/i)).toBeInTheDocument();
+		expect(screen.getByText('You found and destroyed the cloaked ships!')).toBeInTheDocument();
 		// The destroyed ships show a shield-off icon and say so in their name.
 		expect(cell(6)).toHaveAccessibleName('row 2, column 2, ship destroyed');
 		expect(cell(6).querySelector('svg')).toBeInTheDocument();
 		expect(screen.getByRole('status')).toHaveTextContent('Ships destroyed at row 2, column 2; row 3, column 3.');
 		expect(props.setSuccessfulStreakCount).toHaveBeenCalledTimes(1);
 		expect(props.resetSuccessfulStreakCount).not.toHaveBeenCalled();
+	});
+
+	test('the win message is singular for one ship', async () => {
+		const { user } = setup();
+
+		await chooseMode(user, 'Target');
+		await clickCell(user, 6);
+		await fire(user);
+
+		expect(await screen.findByText('You found and destroyed the cloaked ship!')).toBeInTheDocument();
 	});
 
 	test('a partial match loses — finding some ships is not finding them all', async () => {

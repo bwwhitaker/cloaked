@@ -60,7 +60,7 @@ The automated tests cover roles, accessible names, focus and the live region. It
 git clone https://github.com/bwwhitaker/cloaked.git
 cd cloaked
 npm install
-npm run dev        # http://localhost:3000
+npm run dev        # http://localhost:3005/cloaked/
 ```
 
 Other scripts:

@@ -149,7 +149,10 @@ function SearchGrid(props) {
 			.map((id) => cellName(id, axisX))
 			.join('; ');
 
-	const gameOverMsg = () => 'Your scans alerted the enemy and they fired first.';
+	const gameOverMsg = () =>
+		shipsToPass.length === 1
+			? 'Your scans alerted the cloaked ship and it fired first.'
+			: 'Your scans alerted the cloaked ships and they fired first.';
 
 	// On a loss, show where the ships were on the board itself. The grid shows
 	// it to sighted players; the live region carries the same positions for
@@ -241,7 +244,11 @@ function SearchGrid(props) {
 			setCellStatus((prev) => ({ ...prev, ...Object.fromEntries(shipsToPass.map((id) => [id, CELL.DESTROYED])) }));
 			setAnnouncement(`${shipsToPass.length === 1 ? 'Ship' : 'Ships'} destroyed at ${shipCells()}.`);
 			setFireSnackbarOpen(true);
-			setSnackbarMessage1('You found and destroyed all of the ships!');
+			setSnackbarMessage1(
+				shipsToPass.length === 1
+					? 'You found and destroyed the cloaked ship!'
+					: 'You found and destroyed the cloaked ships!',
+			);
 			setSnackbarMessage2('');
 			setFireSnackbarColor('success');
 			setSnackbarTitle('You Win!');
