@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Square from './Square';
-import { Grid, Button, Snackbar, Alert, AlertTitle } from '@mui/material';
+import { Grid, Button, Snackbar, Alert, AlertTitle, Backdrop } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { CELL } from './CellStatus';
 import './GameSpace.css';
@@ -218,7 +218,13 @@ function SearchGrid(props) {
 		if (isInArray(id, targeted)) removeTargeted(id);
 	};
 
+	// While a result is showing, the board is locked. Without this, a click on
+	// Fire! (or a cell) behind the lucky-shot alert fired a second, empty shot
+	// and wiped the streak the alert had just spared.
+	const resultOpen = scanDialog.open || fireSnackbarOpen;
+
 	const handleSquareClick = (id) => {
+		if (resultOpen) return;
 		switch (clickMode) {
 			case 'Scan':
 				handleScan(id);
@@ -234,11 +240,19 @@ function SearchGrid(props) {
 		}
 	};
 
+	// The backdrop handles outside clicks; the Snackbar's own click-away would
+	// otherwise run the same reset a second time.
+	const ignoreClickAway = (fn) => (event, reason) => {
+		if (reason === 'clickaway') return;
+		fn();
+	};
+
 	const gridKeys = Array.from({ length: gridSize }, (_, i) => i + 1);
 
 	const message = ships === 1 ? 'There is 1 cloaked ship!' : `There are ${ships} cloaked ships!`;
 
 	function Fire() {
+		if (resultOpen) return;
 		if (isWin(shipsToPass, targeted)) {
 			// Every targeted cell is a ship, so show their cloaks coming down.
 			setCellStatus((prev) => ({ ...prev, ...Object.fromEntries(shipsToPass.map((id) => [id, CELL.DESTROYED])) }));
@@ -325,7 +339,16 @@ function SearchGrid(props) {
 				</Button>
 			</div>
 
-			<Snackbar open={fireSnackbarOpen} onClose={handleClose} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+			{/* Clicking anywhere outside the result alert returns to the landing page.
+			    The streak lives in GameSpace, so nothing here touches it. */}
+			<Backdrop
+				open={resultOpen}
+				data-testid='result-backdrop'
+				onClick={scanDialog.open ? handleScanDialogClose : handleClose}
+				sx={{ zIndex: 1399, backgroundColor: 'rgba(0, 0, 0, 0.45)' }}
+			/>
+
+			<Snackbar open={fireSnackbarOpen} onClose={ignoreClickAway(handleClose)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
 				<Alert variant='filled' severity={fireSnackbarColor} onClose={handleClose}>
 					<AlertTitle>{snackbarTitle}</AlertTitle>
 					<div>{snackbarMessage1}</div>
@@ -340,7 +363,7 @@ function SearchGrid(props) {
 
 			<Snackbar
 				open={scanDialog.open}
-				onClose={handleScanDialogClose}
+				onClose={ignoreClickAway(handleScanDialogClose)}
 				anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
 			>
 				<Alert variant='filled' severity={scanDialog.severity} onClose={handleScanDialogClose}>

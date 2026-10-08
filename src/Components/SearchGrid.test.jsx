@@ -307,6 +307,44 @@ describe('firing', () => {
 	});
 });
 
+describe('while a result is showing', () => {
+	test('firing behind the lucky-shot alert does not clear the streak', async () => {
+		const { props, user } = setup();
+
+		await clickCell(user, 6); // lucky first scan
+		expect(await screen.findByText(/that was lucky!/i)).toBeInTheDocument();
+
+		await fire(user); // an empty shot behind the alert
+
+		expect(props.resetSuccessfulStreakCount).not.toHaveBeenCalled();
+		expect(screen.queryByText(/game over!/i)).not.toBeInTheDocument();
+	});
+
+	test('cells are locked while a result is showing', async () => {
+		const { user } = setup({ ships: 2, shipLocations: [6, 9] });
+
+		await clickCell(user, 6); // lucky first scan, alert opens
+		await screen.findByText(/that was lucky!/i);
+		await clickCell(user, 16); // would scan, but the board is locked
+
+		expect(cell(16)).toHaveAccessibleName('row 4, column 4, not scanned');
+	});
+
+	test('clicking outside the alert returns to the landing page', async () => {
+		const { props, user } = setup();
+
+		await clickCell(user, 6);
+		await screen.findByText(/that was lucky!/i);
+
+		await user.click(screen.getByTestId('result-backdrop'));
+		await settle(0);
+
+		expect(props.setReadyToPlay).toHaveBeenCalledWith(false);
+		expect(props.setShipLocations).toHaveBeenCalledWith([]);
+		expect(props.resetSuccessfulStreakCount).not.toHaveBeenCalled();
+	});
+});
+
 describe('resetting', () => {
 	test('closing the result hands control back to the parent', async () => {
 		const { props, user } = setup();
