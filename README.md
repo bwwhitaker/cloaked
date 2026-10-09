@@ -10,7 +10,7 @@ A minesweeper-inspired browser game: hunt down enemy ships hiding behind a cloak
 
 You're scanning a grid of space for cloaked enemy ships. Every scan risks giving away your position, so you have to find the ships by inference rather than brute force.
 
-1. **Set your parameters.** Choose a grid size (4×4 up to 8×8) and how many ships to hide (1–5). Optionally turn on **Diagonal Mode**, which treats diagonal cells as adjacent too.
+1. **Set your parameters.** Choose a grid size (4×4 up to 8×8) and how many ships to hide (1–5). Optionally turn on **Diagonal Mode**, which makes a scan also warn you about ships in diagonally adjacent squares, not just the ones sharing a direct side. **How to Play** (next to Start scanning) has the full rules, and the gear opens **Settings**.
 2. **Scan.** In _Scan_ mode, click a cell (or press Enter/Space on it) to reveal it. Every result has its own color _and_ icon, so color is never the only cue:
    - **Black, dot** — all clear, no ship next to it.
    - **Blue, siren** — a ship is adjacent (orthogonally, plus diagonally if Diagonal Mode is on).
@@ -20,13 +20,16 @@ You're scanning a grid of space for cloaked enemy ships. Every scan risks giving
 
 When you lose, every cloaked ship is revealed on the board (red, rocket) so you can see where you went wrong.
 
-Your win streak is saved between sessions in `localStorage`.
+Your **Victory Streak** (consecutive wins) and **Best Streak** are shown in the header and saved between sessions in `localStorage`. A loss resets the streak to 0; a lucky first scan does not. Hover or focus the streak for a short explanation.
+
+**New Game** in the header returns to setup. If you've already scanned or targeted something it asks first, and you can turn that confirmation off ("Don't ask me again") and back on in Settings.
 
 ## Features
 
 - Configurable board size and ship count
 - Optional diagonal adjacency mode
-- Persisted win streak across sessions
+- Victory Streak and Best Streak, persisted across sessions
+- Settings: confirm-before-new-game and Reduce motion
 - Scan reveal animation and game-over / victory feedback
 - Ships revealed on the board when you lose, and shown with their cloaks down when you win
 - Playable with the keyboard and a screen reader (see [Accessibility](#accessibility))
@@ -39,7 +42,10 @@ The board is fully playable without a mouse:
 - **Cells are real buttons**, named by position and state, e.g. "row 2, column 3, scanned, ship adjacent". There are no visible cell numbers.
 - **The grid is a single Tab stop.** Use the arrow keys, Home and End to move around it; Enter or Space acts on the focused cell.
 - **Scan / Target / Unlock is a radio group.** It is one Tab stop; arrow keys change the mode. Tab from the modes goes straight to the grid.
-- **Focus starts on Scan** when a game begins, so you don't have to Tab past Reset Game and Instructions.
+- **Focus starts on Scan** when a game begins, so you don't have to Tab past New Game and How to Play. Returning to setup puts focus on Start scanning.
+- **A locked board while a result shows.** Win, lose and lucky-shot alerts put a backdrop behind them; clicking outside returns to setup and keeps your streak.
+- **Reduce motion** (Settings) turns off the scan animation and other transitions. It starts from your device's setting until you choose.
+- **Landmarks and touch targets:** the game sits in a `<main>`, and everything you press is at least 44px tall.
 - **Results are announced** through a visually hidden live region (each scan, target and unlock, and the ship positions after a win or a loss).
 - **Color is never the only cue.** Each cell state also has an icon (Lucide): crosshair, siren, dot, rocket, and a shield-off over a rocket for a destroyed ship. Every icon/fill pair meets 4.5:1 contrast (checked in `CellStatus.test.js`).
 
@@ -68,6 +74,7 @@ Other scripts:
 ```bash
 npm test           # run tests in watch mode (Vitest)
 npm run test:run   # run the suite once (useful in CI)
+npm run lint       # ESLint (flat config in eslint.config.js)
 npm run build      # production build into ./build
 npm run preview    # serve the production build locally
 ```

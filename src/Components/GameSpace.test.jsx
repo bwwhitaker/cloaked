@@ -1,4 +1,4 @@
-import { render, screen, within, act } from '@testing-library/react';
+import { render, screen, within, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import GameSpace from './GameSpace';
 
@@ -17,7 +17,7 @@ async function settle(ms = 150) {
 }
 
 function begin(user) {
-	return user.click(screen.getByRole('button', { name: /begin search/i }));
+	return user.click(screen.getByRole('button', { name: /start scanning/i }));
 }
 
 // Read the board back out of the DOM: every revealed ship is found by scanning
@@ -36,39 +36,78 @@ describe('setup screen', () => {
 	test('opens on the welcome screen with a zero streak', () => {
 		render(<GameSpace />);
 		expect(screen.getByText(/welcome to cloaked!/i)).toBeInTheDocument();
-		expect(screen.getByText(/streak count: 0/i)).toBeInTheDocument();
+		expect(screen.getByText(/victory streak: 0/i)).toBeInTheDocument();
 	});
 
-	test('diagonal mode starts off and the button label tracks the state', async () => {
+	test('diagonal mode is a labelled switch that starts off', async () => {
 		const user = userEvent.setup();
 		render(<GameSpace />);
 
-		const toggle = screen.getByRole('button', { name: 'Off' });
+		const toggle = screen.getByRole('switch', { name: /diagonal mode/i });
+		expect(toggle).not.toBeChecked();
+		expect(toggle).toHaveAccessibleDescription(/squares that touch at a corner/i);
+
 		await user.click(toggle);
 
-		// A single piece of state drives both. Before, the label and the flag
-		// were separate useStates that had to be kept in step by hand.
-		expect(screen.getByRole('button', { name: 'On' })).toBeInTheDocument();
-		expect(screen.queryByRole('button', { name: 'Off' })).not.toBeInTheDocument();
+		// One piece of state drives the switch and the flag the board receives.
+		expect(toggle).toBeChecked();
 	});
 
 	test('the chosen diagonal mode reaches the board', async () => {
 		const user = userEvent.setup();
 		render(<GameSpace />);
 
-		await user.click(screen.getByRole('button', { name: 'Off' }));
+		await user.click(screen.getByRole('switch', { name: /diagonal mode/i }));
 		await begin(user);
 
 		expect(screen.getByText(/diagonal scannning mode is on/i)).toBeInTheDocument();
 	});
 
-	test('opens the instructions', async () => {
+	test('opens How to Play', async () => {
 		const user = userEvent.setup();
 		render(<GameSpace />);
 
-		await user.click(screen.getByRole('button', { name: /instructions/i }));
+		await user.click(screen.getByRole('button', { name: /how to play/i }));
 
 		expect(await screen.findByRole('dialog')).toBeInTheDocument();
+	});
+
+	test('How to Play sits right after Start scanning, with one copy per screen', async () => {
+		const user = userEvent.setup();
+		render(<GameSpace />);
+
+		expect(screen.getAllByRole('button', { name: /how to play/i })).toHaveLength(1);
+
+		// Tab order: the primary action first, then the help button.
+		screen.getByRole('button', { name: /start scanning/i }).focus();
+		await user.tab();
+		expect(screen.getByRole('button', { name: /how to play/i })).toHaveFocus();
+
+		await begin(user);
+		expect(screen.getAllByRole('button', { name: /how to play/i })).toHaveLength(1);
+	});
+
+	test('the How to Play dialog is named and shows the cell legend', async () => {
+		const user = userEvent.setup();
+		render(<GameSpace />);
+
+		await user.click(screen.getByRole('button', { name: /how to play/i }));
+
+		const dialog = await screen.findByRole('dialog', { name: /how to play/i });
+		expect(within(dialog).getByRole('heading', { name: /victory streak/i })).toBeInTheDocument();
+		// A close button in the title bar, always in view, as well as the one at the bottom.
+		expect(within(dialog).getByRole('button', { name: 'Close How to Play' })).toBeInTheDocument();
+		expect(within(dialog).getByRole('button', { name: 'Close' })).toBeInTheDocument();
+		for (const label of [/clear\./i, /warning\./i, /hit\./i, /targeted\./i, /win\./i]) {
+			expect(within(dialog).getByText(label)).toBeInTheDocument();
+		}
+	});
+
+	test('the streak badge explains itself to assistive technology', () => {
+		render(<GameSpace />);
+		const badge = screen.getByText(/victory streak: 0/i).closest('.StreakBadge');
+		expect(badge).toHaveAccessibleDescription(/consecutive wins/i);
+		expect(badge).toHaveTextContent('Best Streak: 0');
 	});
 });
 
@@ -112,7 +151,7 @@ describe('starting a round', () => {
 			expect(spy.mock.calls.length).toBeGreaterThan(0);
 			seen.push(spy.mock.calls.length);
 
-			await user.click(screen.getByRole('button', { name: /reset game/i }));
+			await user.click(screen.getByRole('button', { name: /new game/i }));
 			await settle(0);
 		}
 
@@ -125,23 +164,43 @@ describe('streak persistence', () => {
 	test('restores a saved streak on load', () => {
 		localStorage.setItem('successfulStreakCount', '7');
 		render(<GameSpace />);
-		expect(screen.getByText(/streak count: 7/i)).toBeInTheDocument();
+		expect(screen.getByText(/victory streak: 7/i)).toBeInTheDocument();
 	});
 
 	test('ignores a corrupt stored value instead of rendering NaN', () => {
 		// parseInt('banana') is NaN, which used to go straight into state and
-		// render "Streak Count: NaN" with no way back short of clearing storage.
+		// render "Victory Streak: NaN" with no way back short of clearing storage.
 		localStorage.setItem('successfulStreakCount', 'banana');
 		render(<GameSpace />);
 
-		expect(screen.getByText(/streak count: 0/i)).toBeInTheDocument();
+		expect(screen.getByText(/victory streak: 0/i)).toBeInTheDocument();
 		expect(screen.queryByText(/nan/i)).not.toBeInTheDocument();
 	});
 
 	test('ignores a negative stored value', () => {
 		localStorage.setItem('successfulStreakCount', '-4');
 		render(<GameSpace />);
-		expect(screen.getByText(/streak count: 0/i)).toBeInTheDocument();
+		expect(screen.getByText(/victory streak: 0/i)).toBeInTheDocument();
+	});
+
+	test('restores the best streak and never shows it below the current streak', () => {
+		localStorage.setItem('successfulStreakCount', '3');
+		localStorage.setItem('bestStreakCount', '9');
+		const { unmount } = render(<GameSpace />);
+		expect(screen.getByText(/best streak: 9/i)).toBeInTheDocument();
+		unmount();
+
+		// A saved streak above the saved best means the best was never written.
+		localStorage.setItem('successfulStreakCount', '5');
+		localStorage.setItem('bestStreakCount', '2');
+		render(<GameSpace />);
+		expect(screen.getByText(/best streak: 5/i)).toBeInTheDocument();
+	});
+
+	test('ignores a corrupt stored best streak', () => {
+		localStorage.setItem('bestStreakCount', 'banana');
+		render(<GameSpace />);
+		expect(screen.getByText(/best streak: 0/i)).toBeInTheDocument();
 	});
 
 	test('writes the streak back to storage', async () => {
@@ -160,7 +219,7 @@ describe('resetting a round', () => {
 		await begin(user);
 		expect(screen.getByRole('button', { name: /fire!/i })).toBeInTheDocument();
 
-		await user.click(screen.getByRole('button', { name: /reset game/i }));
+		await user.click(screen.getByRole('button', { name: /new game/i }));
 		await settle(0);
 
 		expect(screen.queryByRole('button', { name: /fire!/i })).not.toBeInTheDocument();
@@ -177,7 +236,7 @@ describe('resetting a round', () => {
 		const firstGrid = document.querySelector('.GridSpacing');
 		const firstCell = within(firstGrid).getByRole('button', { name: /^row 1, column 1,/ }).className;
 
-		await user.click(screen.getByRole('button', { name: /reset game/i }));
+		await user.click(screen.getByRole('button', { name: /new game/i }));
 		await settle(0);
 		await begin(user);
 
@@ -185,5 +244,166 @@ describe('resetting a round', () => {
 		const secondCell = within(secondGrid).getByRole('button', { name: /^row 1, column 1,/ }).className;
 
 		expect(secondCell).toBe(firstCell);
+	});
+});
+
+describe('returning to the setup screen', () => {
+	test('focus lands on Start scanning after New Game', async () => {
+		const user = userEvent.setup();
+		render(<GameSpace />);
+		await begin(user);
+
+		await user.click(screen.getByRole('button', { name: /new game/i }));
+
+		await waitFor(() => expect(screen.getByRole('button', { name: /start scanning/i })).toHaveFocus());
+	});
+});
+
+describe('settings', () => {
+	test('a Settings button sits in the header on both screens', async () => {
+		const user = userEvent.setup();
+		render(<GameSpace />);
+		expect(screen.getAllByRole('button', { name: 'Settings' })).toHaveLength(1);
+
+		await begin(user);
+		expect(screen.getAllByRole('button', { name: 'Settings' })).toHaveLength(1);
+	});
+
+	test('the Settings dialog is named and has its own close button; How to Play has no settings', async () => {
+		const user = userEvent.setup();
+		render(<GameSpace />);
+
+		await user.click(screen.getByRole('button', { name: 'Settings' }));
+		const settings = await screen.findByRole('dialog', { name: 'Settings' });
+		expect(within(settings).getByRole('button', { name: 'Close Settings' })).toBeInTheDocument();
+		expect(within(settings).getByRole('switch', { name: /confirm before starting a new game/i })).toBeChecked();
+		await user.click(within(settings).getByRole('button', { name: 'Close Settings' }));
+
+		await user.click(await screen.findByRole('button', { name: /how to play/i }));
+		const help = await screen.findByRole('dialog', { name: /how to play/i });
+		expect(within(help).queryByRole('switch')).not.toBeInTheDocument();
+	});
+});
+
+describe('reduce motion', () => {
+	afterEach(() => {
+		delete document.documentElement.dataset.reduceMotion;
+		vi.unstubAllGlobals();
+	});
+
+	test('off by default, and the switch turns it on and remembers it', async () => {
+		const user = userEvent.setup();
+		render(<GameSpace />);
+		expect(document.documentElement.dataset.reduceMotion).toBe('false');
+
+		await user.click(screen.getByRole('button', { name: 'Settings' }));
+		const settings = await screen.findByRole('dialog', { name: 'Settings' });
+		const toggle = within(settings).getByRole('switch', { name: /reduce motion/i });
+		expect(toggle).not.toBeChecked();
+
+		await user.click(toggle);
+		expect(toggle).toBeChecked();
+		expect(document.documentElement.dataset.reduceMotion).toBe('true');
+		expect(localStorage.getItem('reduceMotion')).toBe('true');
+	});
+
+	test('starts from the device setting when the player has not chosen', () => {
+		vi.stubGlobal('matchMedia', (query) => ({ matches: query.includes('reduce'), media: query }));
+		render(<GameSpace />);
+		expect(document.documentElement.dataset.reduceMotion).toBe('true');
+	});
+
+	test("a saved choice beats the device setting", () => {
+		vi.stubGlobal('matchMedia', (query) => ({ matches: query.includes('reduce'), media: query }));
+		localStorage.setItem('reduceMotion', 'false');
+		render(<GameSpace />);
+		expect(document.documentElement.dataset.reduceMotion).toBe('false');
+	});
+});
+
+describe('confirming a new game', () => {
+	// Target mode marks a cell without scanning it, so a round can be "touched"
+	// with no chance of hitting a random ship and ending it.
+	async function touchRound(user) {
+		await user.click(screen.getByRole('radio', { name: 'Target' }));
+		const grid = document.querySelector('.GridSpacing');
+		await user.click(within(grid).getByRole('button', { name: /^row 1, column 1,/ }));
+		await settle(0);
+	}
+
+	test('asks first once there is progress, and Cancel keeps the round', async () => {
+		const user = userEvent.setup();
+		render(<GameSpace />);
+		await begin(user);
+		await touchRound(user);
+
+		await user.click(screen.getByRole('button', { name: /new game/i }));
+
+		const dialog = await screen.findByRole('dialog', { name: /leave this round/i });
+		expect(within(dialog).getByRole('button', { name: 'Cancel' })).toHaveFocus();
+
+		await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+		// findBy: the page stays aria-hidden until the dialog's exit transition ends.
+		expect(await screen.findByRole('button', { name: /fire!/i })).toBeInTheDocument();
+	});
+
+	test('confirming starts a new game, and the streak is untouched', async () => {
+		localStorage.setItem('successfulStreakCount', '4');
+		const user = userEvent.setup();
+		render(<GameSpace />);
+		await begin(user);
+		await touchRound(user);
+
+		await user.click(screen.getByRole('button', { name: /new game/i }));
+		const dialog = await screen.findByRole('dialog', { name: /leave this round/i });
+		await user.click(within(dialog).getByRole('button', { name: 'New Game' }));
+		await settle(0);
+
+		expect(screen.getByText(/welcome to cloaked!/i)).toBeInTheDocument();
+		expect(screen.getByText(/victory streak: 4/i)).toBeInTheDocument();
+	});
+
+	test("'Don't ask me again' is remembered and can be turned back on in Settings", async () => {
+		const user = userEvent.setup();
+		render(<GameSpace />);
+		await begin(user);
+		await touchRound(user);
+
+		await user.click(screen.getByRole('button', { name: /new game/i }));
+		const dialog = await screen.findByRole('dialog', { name: /leave this round/i });
+		await user.click(within(dialog).getByRole('checkbox', { name: /don't ask me again/i }));
+		await user.click(within(dialog).getByRole('button', { name: 'New Game' }));
+		await settle(0);
+		expect(localStorage.getItem('confirmNewGame')).toBe('false');
+
+		// Next time it goes straight through. (findBy: the page stays aria-hidden
+		// until the dialog's exit transition ends.)
+		await screen.findByRole('button', { name: /start scanning/i });
+		await begin(user);
+		await touchRound(user);
+		await user.click(screen.getByRole('button', { name: /new game/i }));
+		await settle(0);
+		expect(screen.queryByRole('dialog', { name: /leave this round/i })).not.toBeInTheDocument();
+		expect(screen.getByText(/welcome to cloaked!/i)).toBeInTheDocument();
+
+		// And the switch in Settings brings the warning back.
+		await user.click(await screen.findByRole('button', { name: 'Settings' }));
+		const settings = await screen.findByRole('dialog', { name: 'Settings' });
+		const toggle = within(settings).getByRole('switch', { name: /confirm before starting a new game/i });
+		expect(toggle).not.toBeChecked();
+		await user.click(toggle);
+		expect(localStorage.getItem('confirmNewGame')).toBe('true');
+	});
+
+	test('no warning when nothing has been done yet this round', async () => {
+		const user = userEvent.setup();
+		render(<GameSpace />);
+		await begin(user);
+
+		await user.click(screen.getByRole('button', { name: /new game/i }));
+		await settle(0);
+
+		expect(screen.queryByRole('dialog', { name: /leave this round/i })).not.toBeInTheDocument();
+		expect(screen.getByText(/welcome to cloaked!/i)).toBeInTheDocument();
 	});
 });

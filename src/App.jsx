@@ -39,9 +39,9 @@ function App() {
 			{isMobile && orientation.includes('landscape') && (
 				<div className='orientation-message'>Please rotate your device back to portrait mode.</div>
 			)}
-			<div className='App-header'>
+			<main className='App-header'>
 				<GameSpace />
-			</div>
+			</main>
 		</div>
 	);
 }

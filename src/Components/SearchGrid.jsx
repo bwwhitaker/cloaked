@@ -3,6 +3,7 @@ import Square from './Square';
 import { Grid, Button, Snackbar, Alert, AlertTitle, Backdrop } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { CELL } from './CellStatus';
+import { Trophy, ShieldX, SearchAlert } from 'lucide-react';
 import './GameSpace.css';
 import { CELL_SIZE, REVEAL_DELAY } from './Constants';
 import { isAdjacentToShip, isWin, isLuckyFirstScan, cellName } from './GameLogic';
@@ -11,6 +12,7 @@ const ModeButton = styled(Button)({
 	textAlign: 'center',
 	justifyContent: 'center',
 	marginLeft: '10px',
+	minHeight: 44, // comfortable touch target
 });
 
 // The three click modes, and the styling each one gets WHEN ACTIVE. Inactive
@@ -65,6 +67,14 @@ function SearchGrid(props) {
 	// player resets mid-animation), which avoids setState-on-unmounted warnings
 	// and stray status flips after the board is gone.
 	const timers = useRef([]);
+
+	// Tell the parent once there is something to lose, so it knows whether
+	// starting a new game needs a confirmation.
+	const touched = scanCount > 0 || targeted.length > 0;
+	useEffect(() => {
+		if (touched) props.onRoundTouched?.();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [touched]);
 	useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
 	const schedule = (fn, delay = 0) => {
@@ -247,6 +257,14 @@ function SearchGrid(props) {
 		fn();
 	};
 
+	// Each result alert gets its own icon: win, lose, and the lucky first scan.
+	const resultIcon = (severity) => {
+		if (severity === 'success') return <Trophy size={22} aria-hidden='true' />;
+		if (severity === 'error') return <ShieldX size={22} aria-hidden='true' />;
+		if (severity === 'info') return <SearchAlert size={22} aria-hidden='true' />; // the lucky first scan
+		return undefined;
+	};
+
 	const gridKeys = Array.from({ length: gridSize }, (_, i) => i + 1);
 
 	const message = ships === 1 ? 'There is 1 cloaked ship!' : `There are ${ships} cloaked ships!`;
@@ -256,14 +274,17 @@ function SearchGrid(props) {
 		if (isWin(shipsToPass, targeted)) {
 			// Every targeted cell is a ship, so show their cloaks coming down.
 			setCellStatus((prev) => ({ ...prev, ...Object.fromEntries(shipsToPass.map((id) => [id, CELL.DESTROYED])) }));
-			setAnnouncement(`${shipsToPass.length === 1 ? 'Ship' : 'Ships'} destroyed at ${shipCells()}.`);
+			const newStreak = props.successfulStreakCount + 1;
+			setAnnouncement(
+				`${shipsToPass.length === 1 ? 'Ship' : 'Ships'} destroyed at ${shipCells()}. Victory! Victory Streak: ${newStreak}.`,
+			);
 			setFireSnackbarOpen(true);
 			setSnackbarMessage1(
 				shipsToPass.length === 1
 					? 'You found and destroyed the cloaked ship!'
 					: 'You found and destroyed the cloaked ships!',
 			);
-			setSnackbarMessage2('');
+			setSnackbarMessage2(`Victory Streak: ${newStreak}`);
 			setFireSnackbarColor('success');
 			setSnackbarTitle('You Win!');
 			props.setSuccessfulStreakCount();
@@ -273,7 +294,11 @@ function SearchGrid(props) {
 			setFireSnackbarOpen(true);
 			setFireSnackbarColor('error');
 			setSnackbarTitle('Game Over!');
-			setSnackbarMessage1(`Your scans were not accurate. They fired back and destroyed your ship.`);
+			setSnackbarMessage1(
+				shipsToPass.length === 1
+					? 'Your scans were not accurate. The cloaked ship fired back and destroyed your ship.'
+					: 'Your scans were not accurate. The cloaked ships fired back and destroyed your ship.',
+			);
 			setSnackbarMessage2(ships === 1 ? 'The cloaked ship has been revealed.' : 'The cloaked ships have been revealed.');
 			clearStreak();
 			resetScanCount();
@@ -300,7 +325,7 @@ function SearchGrid(props) {
 							// to the grid.
 							tabIndex={clickMode === mode ? 0 : -1}
 							// The board only mounts when a game starts. Landing on Scan means
-							// keyboard and screen reader users skip Reset Game and Instructions
+							// keyboard and screen reader users skip New Game and How to Play
 							// and hear the current mode.
 							autoFocus={mode === 'Scan'}
 							onClick={() => setClickMode(mode)}
@@ -334,7 +359,7 @@ function SearchGrid(props) {
 				{announcement}
 			</div>
 			<div className='GameSpaceVertical'>
-				<Button variant='contained' color='error' onClick={() => Fire()}>
+				<Button variant='contained' color='error' sx={{ minHeight: 44 }} onClick={() => Fire()}>
 					Fire!
 				</Button>
 			</div>
@@ -349,13 +374,18 @@ function SearchGrid(props) {
 			/>
 
 			<Snackbar open={fireSnackbarOpen} onClose={ignoreClickAway(handleClose)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
-				<Alert variant='filled' severity={fireSnackbarColor} onClose={handleClose}>
+				<Alert
+					variant='filled'
+					severity={fireSnackbarColor}
+					icon={resultIcon(fireSnackbarColor)}
+					onClose={handleClose}
+				>
 					<AlertTitle>{snackbarTitle}</AlertTitle>
 					<div>{snackbarMessage1}</div>
 					<div>{snackbarMessage2}</div>
 					<div className='top-padding'>
 						<Button color='inherit' variant='outlined' onClick={handleClose} autoFocus>
-							Reset Game
+							New Game
 						</Button>
 					</div>
 				</Alert>
@@ -366,12 +396,17 @@ function SearchGrid(props) {
 				onClose={ignoreClickAway(handleScanDialogClose)}
 				anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
 			>
-				<Alert variant='filled' severity={scanDialog.severity} onClose={handleScanDialogClose}>
+				<Alert
+					variant='filled'
+					severity={scanDialog.severity}
+					icon={resultIcon(scanDialog.severity)}
+					onClose={handleScanDialogClose}
+				>
 					<AlertTitle>{scanDialog.title}</AlertTitle>
 					<div>{scanDialog.message}</div>
 					<div className='top-padding'>
 						<Button color='inherit' variant='outlined' onClick={handleScanDialogClose} autoFocus>
-							Reset Game
+							New Game
 						</Button>
 					</div>
 				</Alert>

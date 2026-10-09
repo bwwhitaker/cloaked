@@ -30,6 +30,7 @@ function setup(overrides = {}) {
 		shipLocations: SHIPS,
 		diagonalMode: false,
 		diagonalModeStatus: 'off',
+		successfulStreakCount: 0,
 		resetSuccessfulStreakCount: vi.fn(),
 		setSuccessfulStreakCount: vi.fn(),
 		setReadyToPlay: vi.fn(),
@@ -126,6 +127,8 @@ describe('scan mode', () => {
 
 		expect(await screen.findByText(/that was lucky!/i)).toBeInTheDocument();
 		expect(props.resetSuccessfulStreakCount).not.toHaveBeenCalled();
+		// It has its own icon, not MUI's default info glyph.
+		expect(screen.getByRole('alert').querySelector('.lucide-search-alert')).toBeInTheDocument();
 	});
 
 	test('scanning a ship after the first move ends the game and clears the streak', async () => {
@@ -241,6 +244,9 @@ describe('firing', () => {
 
 		expect(await screen.findByText(/you win!/i)).toBeInTheDocument();
 		expect(screen.getByText('You found and destroyed the cloaked ships!')).toBeInTheDocument();
+		// The alert shows the new streak, and it is announced.
+		expect(screen.getByText('Victory Streak: 1')).toBeInTheDocument();
+		expect(screen.getByRole('status')).toHaveTextContent('Victory Streak: 1.');
 		// The destroyed ships show a shield-off icon and say so in their name.
 		expect(cell(6)).toHaveAccessibleName('row 2, column 2, ship destroyed');
 		expect(cell(6).querySelector('svg')).toBeInTheDocument();
@@ -268,8 +274,16 @@ describe('firing', () => {
 		await fire(user);
 
 		expect(await screen.findByText(/game over!/i)).toBeInTheDocument();
+		expect(screen.getByText(/the cloaked ships fired back and destroyed your ship/i)).toBeInTheDocument();
+		expect(screen.getByRole('alert').querySelector('.lucide-shield-x')).toBeInTheDocument();
 		expect(props.resetSuccessfulStreakCount).toHaveBeenCalled();
 		expect(props.setSuccessfulStreakCount).not.toHaveBeenCalled();
+	});
+
+	test('a wrong shot says "ship" for one ship', async () => {
+		const { user } = setup();
+		await fire(user);
+		expect(await screen.findByText(/the cloaked ship fired back and destroyed your ship/i)).toBeInTheDocument();
 	});
 
 	test('over-targeting loses even when every ship is covered', async () => {
@@ -354,7 +368,7 @@ describe('resetting', () => {
 		await fire(user);
 		expect(await screen.findByText(/you win!/i)).toBeInTheDocument();
 
-		await user.click(screen.getByRole('button', { name: /reset game/i }));
+		await user.click(screen.getByRole('button', { name: /new game/i }));
 		await settle(0);
 
 		expect(props.setReadyToPlay).toHaveBeenCalledWith(false);
