@@ -16,6 +16,12 @@ async function settle(ms = 150) {
 	});
 }
 
+// The streak badge splits its words across spans (some are hidden on phones),
+// so read the badge as a whole.
+function badge() {
+	return document.querySelector('.StreakBadge');
+}
+
 function begin(user) {
 	return user.click(screen.getByRole('button', { name: /start scanning/i }));
 }
@@ -36,7 +42,7 @@ describe('setup screen', () => {
 	test('opens on the welcome screen with a zero streak', () => {
 		render(<GameSpace />);
 		expect(screen.getByText(/welcome to cloaked!/i)).toBeInTheDocument();
-		expect(screen.getByText(/victory streak: 0/i)).toBeInTheDocument();
+		expect(badge()).toHaveTextContent(/victory streak: 0/i);
 	});
 
 	test('diagonal mode is a labelled switch that starts off', async () => {
@@ -105,9 +111,9 @@ describe('setup screen', () => {
 
 	test('the streak badge explains itself to assistive technology', () => {
 		render(<GameSpace />);
-		const badge = screen.getByText(/victory streak: 0/i).closest('.StreakBadge');
-		expect(badge).toHaveAccessibleDescription(/consecutive wins/i);
-		expect(badge).toHaveTextContent('Best Streak: 0');
+		const streakBadge = badge();
+		expect(streakBadge).toHaveAccessibleDescription(/consecutive wins/i);
+		expect(streakBadge).toHaveTextContent(/best streak: 0/i);
 	});
 });
 
@@ -164,7 +170,7 @@ describe('streak persistence', () => {
 	test('restores a saved streak on load', () => {
 		localStorage.setItem('successfulStreakCount', '7');
 		render(<GameSpace />);
-		expect(screen.getByText(/victory streak: 7/i)).toBeInTheDocument();
+		expect(badge()).toHaveTextContent(/victory streak: 7/i);
 	});
 
 	test('ignores a corrupt stored value instead of rendering NaN', () => {
@@ -173,34 +179,34 @@ describe('streak persistence', () => {
 		localStorage.setItem('successfulStreakCount', 'banana');
 		render(<GameSpace />);
 
-		expect(screen.getByText(/victory streak: 0/i)).toBeInTheDocument();
+		expect(badge()).toHaveTextContent(/victory streak: 0/i);
 		expect(screen.queryByText(/nan/i)).not.toBeInTheDocument();
 	});
 
 	test('ignores a negative stored value', () => {
 		localStorage.setItem('successfulStreakCount', '-4');
 		render(<GameSpace />);
-		expect(screen.getByText(/victory streak: 0/i)).toBeInTheDocument();
+		expect(badge()).toHaveTextContent(/victory streak: 0/i);
 	});
 
 	test('restores the best streak and never shows it below the current streak', () => {
 		localStorage.setItem('successfulStreakCount', '3');
 		localStorage.setItem('bestStreakCount', '9');
 		const { unmount } = render(<GameSpace />);
-		expect(screen.getByText(/best streak: 9/i)).toBeInTheDocument();
+		expect(badge()).toHaveTextContent(/best streak: 9/i);
 		unmount();
 
 		// A saved streak above the saved best means the best was never written.
 		localStorage.setItem('successfulStreakCount', '5');
 		localStorage.setItem('bestStreakCount', '2');
 		render(<GameSpace />);
-		expect(screen.getByText(/best streak: 5/i)).toBeInTheDocument();
+		expect(badge()).toHaveTextContent(/best streak: 5/i);
 	});
 
 	test('ignores a corrupt stored best streak', () => {
 		localStorage.setItem('bestStreakCount', 'banana');
 		render(<GameSpace />);
-		expect(screen.getByText(/best streak: 0/i)).toBeInTheDocument();
+		expect(badge()).toHaveTextContent(/best streak: 0/i);
 	});
 
 	test('writes the streak back to storage', async () => {
@@ -360,7 +366,7 @@ describe('confirming a new game', () => {
 		await settle(0);
 
 		expect(screen.getByText(/welcome to cloaked!/i)).toBeInTheDocument();
-		expect(screen.getByText(/victory streak: 4/i)).toBeInTheDocument();
+		expect(badge()).toHaveTextContent(/victory streak: 4/i);
 	});
 
 	test("'Don't ask me again' is remembered and can be turned back on in Settings", async () => {

@@ -6,8 +6,7 @@ import InstructionModule from './InstructionModule';
 import StreakBadge from './StreakBadge';
 import ResetConfirmDialog from './ResetConfirmDialog';
 import SettingsModule from './SettingsModule';
-import { IconButton } from '@mui/material';
-import { Settings } from 'lucide-react';
+import { Settings, RotateCcw, CircleHelp } from 'lucide-react';
 import './GameSpace.css';
 import { LINK_BLUE, SWITCH_SX } from './Constants';
 import { generateUniqueRandomNumbers } from './GameLogic';
@@ -201,15 +200,13 @@ function GameSpace() {
 		else startNewGame();
 	};
 
-	// Same button, same place, on both screens, so it never shifts.
+	// First item in the header's left group on both screens, so it never shifts.
+	// Written out on wide screens, an icon on phones (see .hdr-label / .hdr-icon).
 	const settingsButton = (
-		<IconButton
-			aria-label='Settings'
-			onClick={() => setOpenSettings(true)}
-			sx={{ color: LINK_BLUE, marginLeft: '8px', minWidth: 44, minHeight: 44 }}
-		>
-			<Settings size={22} aria-hidden='true' />
-		</IconButton>
+		<Button variant='text' sx={{ color: LINK_BLUE }} onClick={() => setOpenSettings(true)}>
+			<Settings className='hdr-icon' size={20} aria-hidden='true' />
+			<span className='hdr-label'>Settings</span>
+		</Button>
 	);
 
 	const incrementStreakCount = () => {
@@ -227,9 +224,9 @@ function GameSpace() {
 		<div>
 			<div hidden={readyToPlay}>
 				<div className='HeaderRow'>
+					<span className='left'>{settingsButton}</span>
 					<span className='right'>
 						<StreakBadge streak={successfulStreakCount} best={bestStreakCount} />
-						{settingsButton}
 					</span>
 				</div>
 				<h1 className='LandingTitle'>Welcome to Cloaked!</h1>
@@ -328,11 +325,13 @@ function GameSpace() {
 				<div>
 					<div className='HeaderRow'>
 						<span className='left'>
+							{settingsButton}
 							<Button
 								sx={{ color: LINK_BLUE }}
 								onClick={handleNewGameClick}
 							>
-								New Game
+								<RotateCcw className='hdr-icon' size={20} aria-hidden='true' />
+								<span className='hdr-label'>New Game</span>
 							</Button>
 							<Button
 								variant='text'
@@ -341,12 +340,12 @@ function GameSpace() {
 									setOpenInstructions(true);
 								}}
 							>
-								How to Play
+								<CircleHelp className='hdr-icon' size={20} aria-hidden='true' />
+								<span className='hdr-label'>How to Play</span>
 							</Button>
 						</span>
 						<span className='right'>
 						<StreakBadge streak={successfulStreakCount} best={bestStreakCount} />
-						{settingsButton}
 					</span>
 					</div>
 

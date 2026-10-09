@@ -4,23 +4,41 @@
 	justify-content: space-between;
 	align-items: center;
 	width: 100%;
-	padding: 10px;
-	margin-top: 10px;
-	margin-bottom: 20px;
+	box-sizing: border-box;
+	padding: 0 20px;
+	margin: 0;
 	top: 0;
 	left: 0;
+	z-index: 10;
 	/* Same height on the setup and game screens (the game row holds taller
 	   buttons), so the streak badge does not shift when a round starts. */
-	min-height: 40px;
+	min-height: 56px;
+}
+
+/* A translucent scrim so the text reads over any part of the photo. It is a
+   separate layer so only the scrim fades out at the bottom, not the buttons. */
+.HeaderRow::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	pointer-events: none;
+	background: rgba(15, 17, 22, 0.78);
+	backdrop-filter: blur(6px);
+	-webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+	mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
 }
 
 .HeaderRow .left {
-	margin-left: 20px;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	margin-left: 0;
 	margin-right: auto;
 }
 
 .HeaderRow .right {
-	margin-right: 40px;
+	margin-right: 0;
 	margin-left: auto;
 	font-size: medium;
 	color: #90caf9; /* LINK_BLUE: 4.5:1+ on the dark background */
@@ -82,7 +100,7 @@ h5 {
 
 .LandingTitle {
 	font-size: clamp(2.2rem, 5vw, 3.2rem);
-	margin: 56px 0 8px;
+	margin: 16px 0 8px;
 }
 
 .SetupCard {
@@ -234,8 +252,11 @@ h5 {
 		position: relative;
 		flex-wrap: wrap;
 		gap: 4px 12px;
-		width: auto;
-		margin: 0;
+		/* App-header centres its children, which shrink-wrapped this bar and bunched
+		   everything in the middle; stretch it across the screen. */
+		width: 100%;
+		align-self: stretch;
+		min-height: 56px; /* same on both screens, as on desktop */
 		padding: 8px 12px;
 	}
 
@@ -301,4 +322,45 @@ h5 {
 .DiagonalSetting,
 .MuiDialog-paper .MuiFormControlLabel-root {
 	cursor: pointer;
+}
+
+/* Header labels: text on wide screens, icons on phones so the whole header fits
+   on one row. The text stays in the accessibility tree either way. */
+.hdr-icon {
+	display: none;
+}
+
+@media (max-width: 640px) {
+	.hdr-icon {
+		display: inline-block;
+	}
+
+	.hdr-label,
+	.StreakBadge .long-label {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+	}
+
+	.HeaderRow .MuiButton-root {
+		min-width: 44px;
+		padding: 6px 10px;
+	}
+
+	/* Spread the three icons evenly across their own area, with the streak at the
+	   far right; a lone Settings icon on the landing page stays at the left. */
+	.HeaderRow .left {
+		flex: 0 1 190px;
+		justify-content: space-between;
+		gap: 0;
+	}
+
+	.HeaderRow {
+		flex-wrap: nowrap;
+		justify-content: space-between;
+	}
 }

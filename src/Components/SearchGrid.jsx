@@ -20,6 +20,14 @@ const ModeButton = styled(Button)({
 // `clickMode` at render time, there is exactly one source of truth and the
 // buttons can never drift out of sync — which is what the four separate
 // background/color state variables risked in the original.
+// The alert buttons take focus while the snackbar is still scaling in, so MUI's
+// focus ripple was measured mid-animation and ended up off-centre. Use a plain
+// outline for keyboard focus instead.
+const ALERT_BUTTON_SX = {
+	'& .MuiTouchRipple-root': { display: 'none' },
+	'&.Mui-focusVisible': { outline: '3px solid #ffffff', outlineOffset: '3px' },
+};
+
 const MODES = ['Scan', 'Target', 'Unlock'];
 
 const ACTIVE_MODE_STYLE = {
@@ -384,7 +392,7 @@ function SearchGrid(props) {
 					<div>{snackbarMessage1}</div>
 					<div>{snackbarMessage2}</div>
 					<div className='top-padding'>
-						<Button color='inherit' variant='outlined' onClick={handleClose} autoFocus>
+						<Button color='inherit' variant='outlined' sx={ALERT_BUTTON_SX} onClick={handleClose} autoFocus>
 							New Game
 						</Button>
 					</div>
@@ -405,7 +413,7 @@ function SearchGrid(props) {
 					<AlertTitle>{scanDialog.title}</AlertTitle>
 					<div>{scanDialog.message}</div>
 					<div className='top-padding'>
-						<Button color='inherit' variant='outlined' onClick={handleScanDialogClose} autoFocus>
+						<Button color='inherit' variant='outlined' sx={ALERT_BUTTON_SX} onClick={handleScanDialogClose} autoFocus>
 							New Game
 						</Button>
 					</div>

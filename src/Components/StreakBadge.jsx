@@ -15,9 +15,17 @@ export default function StreakBadge({ streak, best }) {
 			<span className='StreakBadge' tabIndex={0}>
 				<span className='StreakItem'>
 					<Trophy size={18} strokeWidth={2} aria-hidden='true' />
-					Victory Streak: {streak}
+					{/* One text span: StreakItem is a flex row with a gap, which would
+					    otherwise push every piece of the text apart. */}
+					<span>
+						<span className='long-label'>Victory </span>Streak: {streak}
+					</span>
 				</span>
-				<span className='StreakItem'>Best Streak: {best}</span>
+				<span className='StreakItem'>
+					<span>
+						Best<span className='long-label'> Streak</span>: {best}
+					</span>
+				</span>
 			</span>
 		</Tooltip>
 	);
