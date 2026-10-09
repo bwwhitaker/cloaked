@@ -70,10 +70,13 @@ function GameSpace() {
 	const [openSettings, setOpenSettings] = useState(false);
 	// A saved choice wins; until then, follow the device's setting.
 	const [reduceMotion, setReduceMotion] = useState(() => readStoredFlag(REDUCE_MOTION_STORAGE_KEY) ?? systemPrefersReducedMotion());
-	const beginRef = useRef(null);
+	const beginAction = useRef(null);
 	const wasPlaying = useRef(false);
 
-	const focusBegin = () => beginRef.current?.focus();
+	// ButtonBase's focusVisible() focuses the button AND turns on its keyboard-focus
+	// look (the pulsing ripple). A plain .focus() after a mouse click is not
+	// treated as keyboard focus by the browser, so no focus ring would show.
+	const focusBegin = () => beginAction.current?.focusVisible();
 
 	// Coming back to the setup screen (New Game, or after a result), put focus on
 	// Start scanning. Otherwise it lands on nothing and keyboard and screen reader
@@ -297,7 +300,7 @@ function GameSpace() {
 
 					<div className='SetupActions'>
 						<Button
-							ref={beginRef}
+							action={beginAction}
 							variant='contained'
 							size='large'
 							onClick={() => {
