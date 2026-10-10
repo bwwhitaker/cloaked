@@ -12,7 +12,7 @@ const EXPLANATION =
 export default function StreakBadge({ streak, best }) {
 	return (
 		<Tooltip describeChild arrow title={EXPLANATION}>
-			<span className='StreakBadge' tabIndex={0}>
+			<span className='StreakBadge' role='group' aria-label='Win streaks' tabIndex={0}>
 				<span className='StreakItem'>
 					<Trophy size={18} strokeWidth={2} aria-hidden='true' />
 					{/* One text span: StreakItem is a flex row with a gap, which would

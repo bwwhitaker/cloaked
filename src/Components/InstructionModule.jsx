@@ -60,7 +60,13 @@ function InstructionModule(props) {
 					<X aria-hidden='true' />
 				</IconButton>
 			</DialogTitle>
-				<DialogContent sx={{ '&&': { paddingTop: '24px' } }}>
+				{/* Focusable so keyboard users can scroll the text with the arrow keys. */}
+				<DialogContent
+					tabIndex={0}
+					role='region'
+					aria-labelledby='instructions-title'
+					sx={{ '&&': { paddingTop: '24px' }, '&:focus-visible': { outline: '3px solid #ffffff', outlineOffset: '-3px' } }}
+				>
 					<Typography paragraph>
 						Cloaked ships are hiding in the grid. Find every one before your scans give you away.
 					</Typography>

@@ -1,4 +1,4 @@
-import { render, screen, within, act, waitFor } from '@testing-library/react';
+import { render, screen, within, act, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import GameSpace from './GameSpace';
 
@@ -66,7 +66,7 @@ describe('setup screen', () => {
 		await user.click(screen.getByRole('switch', { name: /diagonal mode/i }));
 		await begin(user);
 
-		expect(screen.getByText(/diagonal scannning mode is on/i)).toBeInTheDocument();
+		expect(screen.getByText(/diagonal mode on/i)).toBeInTheDocument();
 	});
 
 	test('opens How to Play', async () => {
@@ -126,7 +126,7 @@ describe('starting a round', () => {
 
 		// Defaults are a 6x6 board with 2 ships.
 		expect(boardCellCount()).toBe(36);
-		expect(screen.getByText(/there are 2 cloaked ships!/i)).toBeInTheDocument();
+		expect(screen.getByText(/2 cloaked ships/i)).toBeInTheDocument();
 	});
 
 	test('hides the setup controls once play begins', async () => {
@@ -411,5 +411,213 @@ describe('confirming a new game', () => {
 
 		expect(screen.queryByRole('dialog', { name: /leave this round/i })).not.toBeInTheDocument();
 		expect(screen.getByText(/welcome to cloaked!/i)).toBeInTheDocument();
+	});
+});
+
+describe('accessibility settings and screen fit', () => {
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		localStorage.clear();
+	});
+
+	test('higher contrast can be switched on and is remembered', async () => {
+		const user = userEvent.setup();
+		render(<GameSpace />);
+		await user.click(screen.getByRole('button', { name: 'Settings' }));
+		const settings = await screen.findByRole('dialog', { name: 'Settings' });
+		await user.click(within(settings).getByRole('switch', { name: /higher contrast/i }));
+		expect(document.documentElement.dataset.highContrast).toBe('true');
+		expect(localStorage.getItem('highContrast')).toBe('true');
+	});
+
+	test('follows the device contrast setting until the player chooses', () => {
+		vi.stubGlobal('matchMedia', (query) => ({ matches: query.includes('contrast'), media: query }));
+		render(<GameSpace />);
+		expect(document.documentElement.dataset.highContrast).toBe('true');
+	});
+
+	// An N x N grid needs N * 50 + 16 px (8px clear on each side): 266 for 5 x 5,
+	// 316 for 6 x 6, 366 for 7 x 7, 416 for 8 x 8, 466 for 9 x 9, 516 for 10 x 10.
+	test.each([
+		[300, '5'],
+		[315, '5'],
+		[316, '6'],
+		[360, '6'],
+		[366, '7'],
+		[390, '7'],
+		[415, '7'],
+		[416, '8'],
+		[465, '8'],
+		[466, '9'],
+		[515, '9'],
+		[516, '10'],
+		[1024, '10'],
+	])('a %ipx wide screen offers grids up to %s', (width, largest) => {
+		vi.stubGlobal('innerWidth', width);
+		vi.stubGlobal('outerWidth', width); // same as the inner width: not zoomed
+		vi.stubGlobal('innerHeight', 2000);
+		render(<GameSpace />);
+		const slider = screen.getAllByRole('slider')[0];
+		// Every size stays on the slider; asking for the biggest stops at what fits.
+		expect(slider).toHaveAttribute('aria-valuemax', '10');
+		fireEvent.change(slider, { target: { value: 10 } });
+		expect(slider).toHaveAttribute('aria-valuenow', largest);
+	});
+
+	// The Fire button must be visible without scrolling: rows <= (height - 254) / 50,
+	// or (height - 279) / 50 on phones narrower than 400px.
+	test.each([
+		[1200, 500, '5'],
+		[1200, 553, '5'],
+		[1200, 554, '6'],
+		[1200, 604, '7'],
+		[1200, 654, '8'],
+		[1200, 704, '9'],
+		[1200, 754, '10'],
+		[390, 578, '5'],
+		[390, 579, '6'],
+		[390, 629, '7'],
+		[390, 900, '7'],
+	])('a %ipx wide, %ipx tall screen offers grids up to %s', (width, height, largest) => {
+		vi.stubGlobal('innerWidth', width);
+		vi.stubGlobal('outerWidth', width); // same as the inner width: not zoomed
+		vi.stubGlobal('innerHeight', height);
+		render(<GameSpace />);
+		const slider = screen.getAllByRole('slider')[0];
+		fireEvent.change(slider, { target: { value: 10 } });
+		expect(slider).toHaveAttribute('aria-valuenow', largest);
+	});
+
+	test('a wide screen gets every size', () => {
+		vi.stubGlobal('innerHeight', 2000);
+		render(<GameSpace />);
+		expect(screen.getAllByRole('slider')[0]).toHaveAttribute('aria-valuemax', '10');
+	});
+
+	test('the board has a level-one heading', async () => {
+		const user = userEvent.setup();
+		render(<GameSpace />);
+		await begin(user);
+		expect(screen.getByRole('heading', { level: 1, name: 'Cloaked' })).toBeInTheDocument();
+	});
+
+	test('the number of ships is capped at a third of the squares', () => {
+		render(<GameSpace />);
+		const [gridSlider, shipSlider] = screen.getAllByRole('slider');
+		// 6 x 6 = 36 squares, so up to 10 ships and no warning.
+		expect(screen.queryByText(/larger grid is required/i)).not.toBeInTheDocument();
+		// 4 x 4 = 16 squares -> 5 ships; the slider stays, the warning shows.
+		fireEvent.change(gridSlider, { target: { value: 4 } });
+		fireEvent.change(shipSlider, { target: { value: 10 } });
+		expect(shipSlider).toHaveAttribute('aria-valuenow', '5');
+		expect(screen.getByText('A larger grid is required to find more than 5 ships.')).toBeInTheDocument();
+	});
+
+	test('a screen that only fits 4 x 4 and 5 x 5 counts ships 1 to 5 with no ship warning', () => {
+		vi.stubGlobal('innerWidth', 300);
+		vi.stubGlobal('outerWidth', 300); // same as the inner width: not zoomed
+		render(<GameSpace />);
+		const [gridSlider, shipSlider] = screen.getAllByRole('slider');
+		fireEvent.change(gridSlider, { target: { value: 4 } });
+		expect(shipSlider).toHaveAttribute('aria-valuemax', '5');
+		expect(screen.queryByText(/larger grid is required/i)).not.toBeInTheDocument();
+	});
+
+	test('shrinking the window mid-round does not change the board', async () => {
+		vi.stubGlobal('innerWidth', 1400);
+		vi.stubGlobal('outerWidth', 1400); // same as the inner width: not zoomed
+		vi.stubGlobal('innerHeight', 1000);
+		const user = userEvent.setup();
+		render(<GameSpace />);
+		fireEvent.change(screen.getAllByRole('slider')[0], { target: { value: 10 } });
+		await begin(user);
+		expect(document.querySelectorAll('[data-cell-id]')).toHaveLength(100);
+
+		// Leaving full screen: the window gets much smaller.
+		vi.stubGlobal('innerWidth', 400);
+		vi.stubGlobal('outerWidth', 400); // same as the inner width: not zoomed
+		vi.stubGlobal('innerHeight', 500);
+		act(() => {
+			window.dispatchEvent(new Event('resize'));
+		});
+		expect(document.querySelectorAll('[data-cell-id]')).toHaveLength(100);
+	});
+
+	test('New Game on the too-small-window screen asks first, like the header button', async () => {
+		const user = userEvent.setup();
+		render(<GameSpace />);
+		await begin(user);
+		await user.click(screen.getByRole('radio', { name: 'Target' }));
+		await user.click(within(document.querySelector('.GridSpacing')).getByRole('button', { name: /^row 1, column 1,/ }));
+		await settle(0);
+
+		const spy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ bottom: 5000, top: 4964, left: 0, right: 1, width: 1, height: 36 });
+		act(() => {
+			window.dispatchEvent(new Event('resize'));
+		});
+		const lock = screen.getByRole('alertdialog');
+		await user.click(within(lock).getByRole('button', { name: 'New Game' }));
+		spy.mockRestore();
+
+		expect(await screen.findByRole('dialog', { name: /leave this round/i })).toBeInTheDocument();
+	});
+
+	test('pressing past a limit explains the limit out loud', () => {
+		vi.stubGlobal('innerWidth', 400);
+		vi.stubGlobal('outerWidth', 400); // same as the inner width: not zoomed
+		vi.stubGlobal('innerHeight', 2000);
+		render(<GameSpace />);
+		const [gridSlider, shipSlider] = screen.getAllByRole('slider');
+		fireEvent.change(gridSlider, { target: { value: 10 } });
+		expect(screen.getByText('7 by 7 is the largest grid this window fits.')).toBeInTheDocument();
+
+		fireEvent.change(gridSlider, { target: { value: 4 } });
+		fireEvent.change(shipSlider, { target: { value: 10 } });
+		expect(screen.getByText(/5 ships is the most this grid allows/)).toBeInTheDocument();
+	});
+
+	test('zoomed in past 110%, every grid size is offered and the page may scroll', () => {
+		vi.stubGlobal('innerWidth', 400);
+		vi.stubGlobal('innerHeight', 500);
+		vi.stubGlobal('outerWidth', 800); // 200% zoom: half as many CSS pixels as screen pixels
+		render(<GameSpace />);
+		const slider = screen.getAllByRole('slider')[0];
+		fireEvent.change(slider, { target: { value: 10 } });
+		expect(slider).toHaveAttribute('aria-valuenow', '10');
+		expect(screen.queryByText(/larger window is required/i)).not.toBeInTheDocument();
+		expect(document.documentElement.dataset.zoomed).toBe('true');
+	});
+
+	test('110% or less is not treated as zoomed', () => {
+		vi.stubGlobal('innerWidth', 1000);
+		vi.stubGlobal('outerWidth', 1100);
+		render(<GameSpace />);
+		expect(document.documentElement.dataset.zoomed).toBe('false');
+	});
+
+	test('the header hides scrolling down and returns scrolling up', () => {
+		vi.stubGlobal('scrollY', 0);
+		render(<GameSpace />);
+		const scrollTo = (y) => {
+			vi.stubGlobal('scrollY', y);
+			act(() => {
+				window.dispatchEvent(new Event('scroll'));
+			});
+		};
+		const hidden = () => document.documentElement.dataset.headerHidden;
+
+		expect(hidden()).toBe('false');
+		scrollTo(40); // not far enough yet
+		expect(hidden()).toBe('false');
+		scrollTo(300);
+		expect(hidden()).toBe('true');
+		scrollTo(296); // a jitter, not a real change of direction
+		expect(hidden()).toBe('true');
+		scrollTo(250);
+		expect(hidden()).toBe('false');
+		scrollTo(400);
+		expect(hidden()).toBe('true');
+		scrollTo(0);
+		expect(hidden()).toBe('false');
 	});
 });

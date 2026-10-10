@@ -10,3 +10,8 @@ body {
 code {
 	font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
+
+/* Zoomed in past 110%, let the page scroll both ways (see zoom.js). */
+:root[data-zoomed='true'] body {
+	overflow: auto;
+}

@@ -106,16 +106,16 @@ describe('board rendering', () => {
 				setShipLocations={vi.fn()}
 			/>,
 		);
-		expect(screen.getByText(/there is 1 cloaked ship!/i)).toBeInTheDocument();
+		expect(screen.getByText('1 cloaked ship')).toBeInTheDocument();
 		unmount();
 
 		setup({ ships: 3, shipLocations: [6, 9, 14] });
-		expect(screen.getByText(/there are 3 cloaked ships!/i)).toBeInTheDocument();
+		expect(screen.getByText('3 cloaked ships')).toBeInTheDocument();
 	});
 
 	test('reports whether diagonal mode is on', () => {
 		setup({ diagonalModeStatus: 'on' });
-		expect(screen.getByText(/diagonal scannning mode is on/i)).toBeInTheDocument();
+		expect(screen.getByText('Diagonal mode on')).toBeInTheDocument();
 	});
 });
 
@@ -229,6 +229,23 @@ describe('target and unlock modes', () => {
 
 		expect(await screen.findByText(/game over!/i)).toBeInTheDocument();
 		expect(props.setSuccessfulStreakCount).not.toHaveBeenCalled();
+	});
+
+	test('the Targeted tally counts marks, with no "of N" limit, and follows unlock', async () => {
+		const { user } = setup();
+		expect(screen.getByText('Targeted: 0')).toBeInTheDocument();
+
+		await chooseMode(user, 'Target');
+		await clickCell(user, 1);
+		await clickCell(user, 2);
+		await clickCell(user, 2); // the same square twice is still one mark
+		await settle(0);
+		expect(screen.getByText('Targeted: 2')).toBeInTheDocument();
+
+		await chooseMode(user, 'Unlock');
+		await clickCell(user, 1);
+		await settle();
+		expect(screen.getByText('Targeted: 1')).toBeInTheDocument();
 	});
 });
 
@@ -489,5 +506,121 @@ describe('state icons', () => {
 		const { user } = setup();
 		await clickCell(user, 16);
 		expect(cell(16).querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+	});
+});
+
+describe('a window too short for the board', () => {
+	afterEach(() => vi.restoreAllMocks());
+
+	// jsdom has no layout, so say where the Fire button is.
+	const placeFireButtonAt = (bottom) =>
+		vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function () {
+			return { top: bottom - 36, bottom, left: 0, right: 100, width: 100, height: 36 };
+		});
+
+	test('is not locked while the Fire button is on screen', () => {
+		placeFireButtonAt(window.innerHeight - 10);
+		setup();
+		expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+	});
+
+	test('locks the board when the Fire button is below the window, and offers a new game', async () => {
+		placeFireButtonAt(window.innerHeight + 200);
+		const { props, user } = setup();
+
+		const lock = screen.getByRole('alertdialog');
+		expect(lock).toHaveTextContent('Increase window size to continue or start a new game.');
+
+		await user.click(within(lock).getByRole('button', { name: 'New Game' }));
+		expect(props.setReadyToPlay).toHaveBeenCalledWith(false);
+	});
+
+	test('unlocks again when the window grows', () => {
+		const spy = placeFireButtonAt(window.innerHeight + 200);
+		setup();
+		expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+
+		spy.mockRestore();
+		placeFireButtonAt(window.innerHeight - 10);
+		act(() => {
+			window.dispatchEvent(new Event('resize'));
+		});
+		expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+	});
+
+	test('also locks when the grid is wider than the window', () => {
+		vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function () {
+			const isGrid = this.getAttribute('aria-label') === 'Scan grid';
+			return isGrid
+				? { top: 100, bottom: 400, left: -40, right: window.innerWidth + 40, width: window.innerWidth + 80, height: 300 }
+				: { top: 10, bottom: 50, left: 0, right: 100, width: 100, height: 40 };
+		});
+		setup();
+		expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+	});
+
+	test('the lock screen makes the board inert, and focus returns when it clears', () => {
+		const spy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(() => ({
+			top: window.innerHeight + 100,
+			bottom: window.innerHeight + 136,
+			left: 0,
+			right: 100,
+			width: 100,
+			height: 36,
+		}));
+		setup();
+		expect(document.querySelector('[inert]')).not.toBeNull();
+		expect(document.querySelector('[inert]')).toContainElement(screen.getAllByRole('radio')[0]);
+
+		spy.mockRestore();
+		act(() => {
+			window.dispatchEvent(new Event('resize'));
+		});
+		expect(document.querySelector('[inert]')).toBeNull();
+	});
+
+	test('Tab does not leave the lock screen', async () => {
+		vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(() => ({
+			top: window.innerHeight + 100,
+			bottom: window.innerHeight + 136,
+			left: 0,
+			right: 100,
+			width: 100,
+			height: 36,
+		}));
+		const { user } = setup();
+		const button = within(screen.getByRole('alertdialog')).getByRole('button', { name: 'New Game' });
+		button.focus();
+		await user.tab();
+		expect(button).toHaveFocus();
+	});
+});
+
+describe('the targeted tally for screen readers', () => {
+	test('speaks the running total after marks and unlocks', async () => {
+		const { user } = setup();
+		const tally = screen.getByTestId('targeted-tally');
+		expect(tally).toHaveTextContent('0 targeted');
+		await chooseMode(user, 'Target');
+		await clickCell(user, 1);
+		await clickCell(user, 2);
+		await settle(0);
+		expect(tally).toHaveTextContent('2 targeted');
+		expect(tally).toHaveAttribute('aria-live', 'polite');
+	});
+
+	test('never locks while zoomed in: the page scrolls instead', () => {
+		vi.stubGlobal('outerWidth', window.innerWidth * 2);
+		vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(() => ({
+			top: window.innerHeight + 100,
+			bottom: window.innerHeight + 136,
+			left: -300,
+			right: window.innerWidth + 300,
+			width: window.innerWidth + 600,
+			height: 36,
+		}));
+		setup();
+		expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+		vi.unstubAllGlobals();
 	});
 });

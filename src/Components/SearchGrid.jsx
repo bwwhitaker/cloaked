@@ -1,19 +1,38 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Square from './Square';
 import { Grid, Button, Snackbar, Alert, AlertTitle, Backdrop } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { CELL } from './CellStatus';
-import { Trophy, ShieldX, SearchAlert } from 'lucide-react';
+import { Trophy, ShieldX, SearchAlert, ScanSearch, Crosshair, LockOpen } from 'lucide-react';
 import './GameSpace.css';
 import { CELL_SIZE, REVEAL_DELAY } from './Constants';
+import { isZoomedIn } from './zoom';
 import { isAdjacentToShip, isWin, isLuckyFirstScan, cellName } from './GameLogic';
 
+// One segment of the Scan / Target / Unlock control. Segments share a single
+// outlined container (see .SegmentedControl) and split its width equally.
 const ModeButton = styled(Button)({
+	flex: 1,
+	minWidth: 0,
+	gap: 8,
+	minHeight: 36, // still well over WCAG's 24px minimum target, and no extra vertical padding
+	paddingTop: 0,
+	paddingBottom: 0,
+	borderRadius: 0,
+	border: 'none',
 	textAlign: 'center',
 	justifyContent: 'center',
-	marginLeft: '10px',
-	minHeight: 44, // comfortable touch target
+	'& + &': { borderLeft: '1px solid rgba(255, 255, 255, 0.2)' },
+	// Autofocus runs while the board is mounting, so MUI's focus ripple was drawn
+	// off-centre. The outline below is the focus indicator instead.
+	'& .MuiTouchRipple-root': { display: 'none' },
+	'&:hover': { backgroundColor: 'rgba(144, 202, 249, 0.18)' },
+	'&:focus-visible': { outline: '3px solid #ffffff', outlineOffset: '-3px' },
 });
+
+// The icons match the ones drawn on the board for the same actions.
+const MODE_ICON = { Scan: ScanSearch, Target: Crosshair, Unlock: LockOpen };
 
 // The three click modes, and the styling each one gets WHEN ACTIVE. Inactive
 // buttons fall back to INACTIVE_MODE_STYLE. Because the look is derived from
@@ -28,6 +47,9 @@ const ALERT_BUTTON_SX = {
 	'&.Mui-focusVisible': { outline: '3px solid #ffffff', outlineOffset: '3px' },
 };
 
+// MUI's filled info alert (white on #0288d1) is only 3.9:1; this is about 7.5:1.
+const INFO_ALERT_SX = { backgroundColor: '#01579b' };
+
 const MODES = ['Scan', 'Target', 'Unlock'];
 
 const ACTIVE_MODE_STYLE = {
@@ -36,7 +58,7 @@ const ACTIVE_MODE_STYLE = {
 	Unlock: { backgroundColor: 'white', color: 'black' },
 };
 
-const INACTIVE_MODE_STYLE = { backgroundColor: '', color: 'white' };
+const INACTIVE_MODE_STYLE = { backgroundColor: 'transparent', color: 'white' };
 
 function SearchGrid(props) {
 	const axisX = parseInt(props.axis);
@@ -56,7 +78,10 @@ function SearchGrid(props) {
 	// Roving tabindex: only one cell is a Tab stop, arrow keys move within the grid.
 	const [activeId, setActiveId] = useState(1);
 	// Spoken (visually hidden) result of the last action.
-	const [announcement, setAnnouncement] = useState('');
+	// The counter re-keys the text node, so a message identical to the last one
+	// (re-scanning the same cell) is still read out.
+	const [announcement, setAnnouncementState] = useState({ text: '', count: 0 });
+	const setAnnouncement = (text) => setAnnouncementState((prev) => ({ text, count: prev.count + 1 }));
 	const [scanDialog, setScanDialog] = useState({
 		open: false,
 		severity: 'error',
@@ -75,6 +100,52 @@ function SearchGrid(props) {
 	// player resets mid-animation), which avoids setState-on-unmounted warnings
 	// and stray status flips after the board is gone.
 	const timers = useRef([]);
+
+	// The window can shrink mid-round (leaving full screen) while the board keeps
+	// its size. If that pushes the Fire button below the bottom edge, or the grid
+	// past a side edge, lock the board until the window grows again or the player
+	// starts over. Measured, not guessed: only something really off screen locks.
+	const fireButton = useRef(null);
+	const gridBox = useRef(null);
+	const [windowTooSmall, setWindowTooSmall] = useState(false);
+	const lockedRef = useRef(false);
+	const focusBeforeLock = useRef(null);
+	useEffect(() => {
+		const check = () => {
+			const fire = fireButton.current;
+			const grid = gridBox.current;
+			if (!fire || !grid) return;
+			const gridRect = grid.getBoundingClientRect();
+			// Zoomed in, the page scrolls, so being off screen is fine.
+			const tooSmall =
+				!isZoomedIn() &&
+				(fire.getBoundingClientRect().bottom > window.innerHeight + 1 ||
+				gridRect.left < -1 ||
+				gridRect.right > window.innerWidth + 1);
+			// Note where focus is before the lock screen takes it.
+			if (tooSmall && !lockedRef.current) focusBeforeLock.current = document.activeElement;
+			lockedRef.current = tooSmall;
+			setWindowTooSmall(tooSmall);
+		};
+		check();
+		window.addEventListener('resize', check);
+		return () => window.removeEventListener('resize', check);
+	}, []);
+
+	// While locked, nothing behind the lock screen can be reached: it is made inert
+	// (no focus, no clicks, hidden from screen readers), and focus returns to where
+	// it was once the window is big enough again.
+	useEffect(() => {
+		if (!windowTooSmall) return undefined;
+		let page = gridBox.current;
+		while (page && page.parentElement !== document.body) page = page.parentElement;
+		page?.setAttribute('inert', '');
+		return () => {
+			page?.removeAttribute('inert');
+			const back = focusBeforeLock.current;
+			if (back instanceof HTMLElement && document.contains(back)) back.focus();
+		};
+	}, [windowTooSmall]);
 
 	// Tell the parent once there is something to lose, so it knows whether
 	// starting a new game needs a confirmation.
@@ -275,7 +346,11 @@ function SearchGrid(props) {
 
 	const gridKeys = Array.from({ length: gridSize }, (_, i) => i + 1);
 
-	const message = ships === 1 ? 'There is 1 cloaked ship!' : `There are ${ships} cloaked ships!`;
+	// Counted from what the board shows, so re-targeting a square or scanning a
+	// targeted one cannot throw it off.
+	const targetedCount = Object.values(cellStatus).filter((status) => status === CELL.TARGETED).length;
+
+	const shipsLabel = ships === 1 ? '1 cloaked ship' : `${ships} cloaked ships`;
 
 	function Fire() {
 		if (resultOpen) return;
@@ -316,17 +391,27 @@ function SearchGrid(props) {
 	return (
 		<div>
 			<div className='CenterAligning'>
-				<div className='GameSpaceVertical'>{message}</div>
-				<div className='DiagonalModeMessage'>Diagonal Scannning Mode is {diagonalModeStatus}.</div>
-				<div className='GameSpaceVertical' role='radiogroup' aria-labelledby='mode-label'>
-					<span id='mode-label'>Mode:</span>
-					{MODES.map((mode) => (
+				<section className='ControlPanel' aria-label='Round controls'>
+					<ul className='RoundStatus' aria-label='Round settings'>
+						<li className='StatusChip'>{shipsLabel}</li>
+						<li className='StatusChip'>Diagonal mode {String(diagonalModeStatus).toLowerCase()}</li>
+						{/* Just a tally, never "of N": players may target more than there are
+						    ships (and lose), so it must not read as a limit or a hint. */}
+						<li className='StatusChip'>Targeted: {targetedCount}</li>
+					</ul>
+					<span id='mode-label' className='visually-hidden'>
+						Mode
+					</span>
+					<div className='SegmentedControl' role='radiogroup' aria-labelledby='mode-label'>
+					{MODES.map((mode) => {
+						const ModeIcon = MODE_ICON[mode];
+						return (
 						<ModeButton
 							key={mode}
 							role='radio'
 							aria-checked={clickMode === mode}
 							data-mode={mode}
-							variant='outlined'
+							variant='text'
 							sx={clickMode === mode ? ACTIVE_MODE_STYLE[mode] : INACTIVE_MODE_STYLE}
 							// Radio group keyboard model: the selected mode is the only Tab
 							// stop and arrow keys move between modes, so Tab goes straight on
@@ -339,11 +424,14 @@ function SearchGrid(props) {
 							onClick={() => setClickMode(mode)}
 							onKeyDown={handleModeKeyDown}
 						>
+							<ModeIcon size={18} aria-hidden='true' />
 							{mode}
 						</ModeButton>
-					))}
-				</div>
-				<div className='GridSpacing' role='group' aria-label='Scan grid' onKeyDown={handleGridKeyDown}>
+						);
+					})}
+					</div>
+				</section>
+				<div ref={gridBox} className='GridSpacing' role='group' aria-label='Scan grid' onKeyDown={handleGridKeyDown}>
 					<Grid width={width} container justifyContent={'center'} spacing={0} columns={gridSize}>
 						{gridKeys.map((key) => (
 							<Grid item xs={axisX} key={key}>
@@ -364,10 +452,14 @@ function SearchGrid(props) {
 				</div>
 			</div>
 			<div className='visually-hidden' role='status' aria-live='polite'>
-				{announcement}
+				<span key={announcement.count}>{announcement.text}</span>
+			</div>
+			{/* The running total, spoken after each square's own announcement. */}
+			<div className='visually-hidden' aria-live='polite' data-testid='targeted-tally'>
+				{targetedCount} targeted
 			</div>
 			<div className='GameSpaceVertical'>
-				<Button variant='contained' color='error' sx={{ minHeight: 44 }} onClick={() => Fire()}>
+				<Button ref={fireButton} variant='contained' color='error' sx={{ minHeight: 36, py: 0 }} onClick={() => Fire()}>
 					Fire!
 				</Button>
 			</div>
@@ -380,6 +472,25 @@ function SearchGrid(props) {
 				onClick={scanDialog.open ? handleScanDialogClose : handleClose}
 				sx={{ zIndex: 1399, backgroundColor: 'rgba(0, 0, 0, 0.45)' }}
 			/>
+
+			{windowTooSmall &&
+				createPortal(
+					<div
+						className='window-too-small'
+						role='alertdialog'
+						aria-modal='true'
+						aria-labelledby='window-too-small-msg'
+						// The one button is the only thing to focus, so Tab stays on it.
+						onKeyDown={(e) => e.key === 'Tab' && e.preventDefault()}
+					>
+						<p id='window-too-small-msg'>Increase window size to continue or start a new game.</p>
+						{/* Same path as the header's New Game, so it asks first when a round is under way. */}
+						<Button variant='outlined' color='inherit' autoFocus onClick={props.onNewGame ?? handleClose}>
+							New Game
+						</Button>
+					</div>,
+					document.body,
+				)}
 
 			<Snackbar open={fireSnackbarOpen} onClose={ignoreClickAway(handleClose)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
 				<Alert
@@ -406,6 +517,7 @@ function SearchGrid(props) {
 			>
 				<Alert
 					variant='filled'
+					sx={scanDialog.severity === 'info' ? INFO_ALERT_SX : undefined}
 					severity={scanDialog.severity}
 					icon={resultIcon(scanDialog.severity)}
 					onClose={handleScanDialogClose}

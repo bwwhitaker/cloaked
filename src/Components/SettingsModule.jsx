@@ -7,7 +7,7 @@ import './InstructionModule.css';
 
 // Player preferences. Kept apart from How to Play so that dialog stays pure help,
 // and so there is one obvious place to add the next setting (sound, reduced motion).
-function SettingsModule({ open, onClose, confirmNewGame, setConfirmNewGame, reduceMotion, setReduceMotion }) {
+function SettingsModule({ open, onClose, confirmNewGame, setConfirmNewGame, reduceMotion, setReduceMotion, highContrast, setHighContrast }) {
 	return (
 		<Dialog
 			open={open}
@@ -59,6 +59,22 @@ function SettingsModule({ open, onClose, confirmNewGame, setConfirmNewGame, redu
 				/>
 				<FormHelperText id='motion-help' sx={{ color: '#e0e3df', margin: 0 }}>
 					Turns off the scan animation and other transitions. Starts from your device&apos;s setting until you change it.
+				</FormHelperText>
+
+				<FormControlLabel
+					label='Higher contrast'
+					sx={{ marginTop: '20px', marginLeft: 0 }}
+					control={
+						<Switch
+							checked={highContrast}
+							onChange={(e) => setHighContrast(e.target.checked)}
+							inputProps={{ role: 'switch', 'aria-describedby': 'contrast-help' }}
+							sx={SWITCH_SX}
+						/>
+					}
+				/>
+				<FormHelperText id='contrast-help' sx={{ color: '#e0e3df', margin: 0 }}>
+					Brighter borders around squares and controls, and a lighter fill on unscanned squares. Starts from your device&apos;s setting until you change it.
 				</FormHelperText>
 			</DialogContent>
 			<DialogActions>
